@@ -8,7 +8,7 @@ class LevelTest(unittest.TestCase):
     def test_insert(self):
         print("Test Insert")
         level = orderbook.Level(10, orderbook.BUY)
-        order = orderbook.Order(0, orderbook.BUY, 10, 5)
+        order = orderbook.Order("trader1", 0, orderbook.BUY, 10, 5)
 
         level.insert(order)
 
@@ -17,7 +17,7 @@ class LevelTest(unittest.TestCase):
         
         print(level)
 
-        order = orderbook.Order(3, orderbook.BUY, 10, 10)
+        order = orderbook.Order("trader1", 3, orderbook.BUY, 10, 10)
         level.insert(order)
 
         self.assertEqual(level.volume, 15)
@@ -25,17 +25,17 @@ class LevelTest(unittest.TestCase):
 
         print(level)
 
-        bad_order = orderbook.Order(3, orderbook.SELL, 10, 10)
+        bad_order = orderbook.Order("trader1", 3, orderbook.SELL, 10, 10)
         self.assertRaises(AssertionError, lambda : level.insert(bad_order))
         
-        bad_order = orderbook.Order(3, orderbook.BUY, 9, 10)
+        bad_order = orderbook.Order("trader1", 3, orderbook.BUY, 9, 10)
         self.assertRaises(AssertionError, lambda : level.insert(bad_order))
         
     def set_level(self):
             level = orderbook.Level(10, orderbook.BUY)
-            level.insert(orderbook.Order(0, orderbook.BUY, 10, 5))
-            level.insert(orderbook.Order(1, orderbook.BUY, 10, 10))
-            level.insert(orderbook.Order(2, orderbook.BUY, 10, 12))
+            level.insert(orderbook.Order("trader1", 0, orderbook.BUY, 10, 5))
+            level.insert(orderbook.Order("trader1", 1, orderbook.BUY, 10, 10))
+            level.insert(orderbook.Order("trader1", 2, orderbook.BUY, 10, 12))
             return level
         
     def test_match(self):

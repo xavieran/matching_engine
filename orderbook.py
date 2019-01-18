@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import logging
+
 BUY = 0
 SELL = 1
 
@@ -16,8 +18,26 @@ def generate_trade_id():
     return TID
 
 class Trade:
-    def __init__(self, trade_id, order_id, side, price, volume):
+    def __init__(self, trade_id, trader_id, order_id, side, price, volume):
         self.trade_id = trade_id
+        self.trader_id = trader_id
+        self.order_id = order_id
+        self.side = side
+        self.price = price
+        self.volume = volume
+
+    def __str__(self):
+        return "[{} {} {} {} {}@{}]".format(
+            self.trade_id,
+            self.trader_id,
+            self.order_id, 
+            "Buy" if self.side == BUY else "Sell",
+            self.volume,
+            self.price)
+
+class Order:
+    def __init__(self, trader_id, order_id, side, price, volume):
+        self.trader_id = trader_id
         self.order_id = order_id
         self.side = side
         self.price = price
@@ -25,21 +45,7 @@ class Trade:
 
     def __str__(self):
         return "[{} {} {} {}@{}]".format(
-            self.trade_id,
-            self.order_id, 
-            "Buy" if self.side == BUY else "Sell",
-            self.volume,
-            self.price)
-
-class Order:
-    def __init__(self, order_id, side, price, volume):
-        self.order_id = order_id
-        self.side = side
-        self.price = price
-        self.volume = volume
-
-    def __str__(self):
-        return "[{} {} {}@{}]".format(
+            self.trader_id,
             self.order_id, 
             "Buy" if self.side == BUY else "Sell",
             self.volume,
@@ -99,7 +105,7 @@ class Level:
                 self.volume -= volume
 
                 tid = generate_trade_id()
-                trades.append(Trade(tid, order.order_id, order.side, order.price, volume))
+                trades.append(Trade(tid, order.trader_id, order.order_id, order.side, order.price, volume))
                 break
             else:
                 matched_volume += order.volume
@@ -107,7 +113,7 @@ class Level:
                 volume -= order.volume
 
                 tid = generate_trade_id()
-                trades.append(Trade(tid, order.order_id, order.side, order.price, order.volume))
+                trades.append(Trade(tid, order.trader_id, order.order_id, order.side, order.price, order.volume))
                 
                 to_remove.append(order.order_id)
         
@@ -128,6 +134,7 @@ class Levels:
         self.levels = {}
         self.prices = []
         self.comp = (lambda x, y: x <= y) if side == BUY else (lambda x, y: x >= y)
+        self.log = logging.getLogger("bid_levels" if side == BUY else "ask_levels")
 
     def __str__(self):
         if self.side == BUY:
@@ -173,6 +180,7 @@ class Levels:
         If these are orders on the bid. (i.e. I am will to buy from you),
         then the aggressing order price must be <= to the level price.
         """
+        self.log.info("Trying to match order: {}".format(str(order)))
         volume = order.volume
         trades = []
         matched_sum = 0
@@ -196,30 +204,33 @@ class Levels:
             
 
 class OrderBook:
-    def __init__(self, trade_handler=lambda x: x):
+    def __init__(self, trade_handler=lambda x, y: None):
         self.bid_levels = Levels(BUY)
         self.ask_levels = Levels(SELL)
         self._trade_handler = trade_handler
+        self.log = logging.getLogger("orderbook")
 
     def __str__(self):
         return str(self.ask_levels) + "\n" + str(self.bid_levels)
 
     def insert_order(self, order):
+        self.log.info("Inserting order: {}".format(str(order)))
+
         trades = None
 
         if order.side == BUY:
             if self.ask_levels.prices and order.price >= self.ask_levels.get_levels()[0].price:
-                    trades = self.ask_levels.match(order)
+                trades = self.ask_levels.match(order)
             else:
                 self.bid_levels.insert(order)
 
         if order.side == SELL:
             if self.bid_levels.prices and order.price <= self.bid_levels.get_levels()[0].price:
-                    trades = self.bid_levels.match(order)
+                trades = self.bid_levels.match(order)
             else:
                 self.ask_levels.insert(order)
 
-        self.handle_trades(trades)
+        self.handle_trades(trades, order.order_id)
 
     def cancel_order(self, order_id):
         if not self.bid_levels.cancel(order_id):
@@ -228,9 +239,7 @@ class OrderBook:
 
         return True
 
-    def handle_trades(self, trades):
-        if not trades:
-            print("No trades")
-        else:
-            print(",".join(map(str, trades)))
-            self._trade_handler(trades)
+    def handle_trades(self, trades, order_id):
+        if trades:
+            self.log.info("Traded: {} with order_id: {}".format(",".join(map(str, trades)), order_id))
+            self._trade_handler(trades, order_id)

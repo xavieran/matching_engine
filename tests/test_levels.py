@@ -83,14 +83,14 @@ class LevelsTest(unittest.TestCase):
         print("Test Insert")
         bid_levels = orderbook.Levels(orderbook.BUY)
         
-        bid_levels.insert(orderbook.Order(0, orderbook.BUY, 10, 5))
+        bid_levels.insert(orderbook.Order("trader1", 0, orderbook.BUY, 10, 5))
 
         self.assertEqual(bid_levels.prices, [10])
         self.assertEqual(len(bid_levels.levels), 1)
 
         print(bid_levels)
 
-        bid_levels.insert(orderbook.Order(1, orderbook.BUY, 10, 7))
+        bid_levels.insert(orderbook.Order("trader1", 1, orderbook.BUY, 10, 7))
         self.assertEqual(bid_levels.prices, [10])
         self.assertEqual(len(bid_levels.levels), 1)
 
@@ -98,14 +98,14 @@ class LevelsTest(unittest.TestCase):
 
         ask_levels = orderbook.Levels(orderbook.SELL)
         
-        ask_levels.insert(orderbook.Order(0, orderbook.SELL, 10, 5))
+        ask_levels.insert(orderbook.Order("trader1", 0, orderbook.SELL, 10, 5))
 
         self.assertEqual(ask_levels.prices, [10])
         self.assertEqual(len(ask_levels.levels), 1)
 
         print(ask_levels)
 
-        ask_levels.insert(orderbook.Order(1, orderbook.SELL, 10, 7))
+        ask_levels.insert(orderbook.Order("trader1", 1, orderbook.SELL, 10, 7))
         self.assertEqual(ask_levels.prices, [10])
         self.assertEqual(len(ask_levels.levels), 1)
 
@@ -116,7 +116,7 @@ class LevelsTest(unittest.TestCase):
         bid_levels = orderbook.Levels(orderbook.BUY)
         self.assertEqual(bid_levels.cancel(4), False)
 
-        bid_levels.insert(orderbook.Order(0, orderbook.BUY, 10, 5))
+        bid_levels.insert(orderbook.Order("trader1", 0, orderbook.BUY, 10, 5))
 
         self.assertEqual(bid_levels.prices, [10])
         self.assertEqual(len(bid_levels.levels), 1)
@@ -130,9 +130,9 @@ class LevelsTest(unittest.TestCase):
 
         print(bid_levels)
 
-        bid_levels.insert(orderbook.Order(1, orderbook.BUY, 10, 5))
-        bid_levels.insert(orderbook.Order(2, orderbook.BUY, 12, 7))
-        bid_levels.insert(orderbook.Order(3, orderbook.BUY, 13, 10))
+        bid_levels.insert(orderbook.Order("trader1", 1, orderbook.BUY, 10, 5))
+        bid_levels.insert(orderbook.Order("trader1", 2, orderbook.BUY, 12, 7))
+        bid_levels.insert(orderbook.Order("trader1", 3, orderbook.BUY, 13, 10))
 
         self.assertEqual(bid_levels.prices, [13, 12, 10])
         self.assertEqual(len(bid_levels.levels), 3)
@@ -149,22 +149,22 @@ class LevelsTest(unittest.TestCase):
         print("Test Match")
         bid_levels = orderbook.Levels(orderbook.BUY)
 
-        bid_levels.insert(orderbook.Order(0, orderbook.BUY, 10, 5))
-        bid_levels.insert(orderbook.Order(1, orderbook.BUY, 10, 3))
-        bid_levels.insert(orderbook.Order(2, orderbook.BUY, 12, 7))
-        bid_levels.insert(orderbook.Order(3, orderbook.BUY, 13, 10))
+        bid_levels.insert(orderbook.Order("trader1", 0, orderbook.BUY, 10, 5))
+        bid_levels.insert(orderbook.Order("trader1", 1, orderbook.BUY, 10, 3))
+        bid_levels.insert(orderbook.Order("trader1", 2, orderbook.BUY, 12, 7))
+        bid_levels.insert(orderbook.Order("trader1", 3, orderbook.BUY, 13, 10))
 
         self.assertEqual(bid_levels.prices, [13, 12, 10])
         self.assertEqual(len(bid_levels.levels), 3)
 
         print(bid_levels)
 
-        aggressing_order = orderbook.Order(5, orderbook.SELL, 14, 1)
+        aggressing_order = orderbook.Order("trader1", 5, orderbook.SELL, 14, 1)
 
         trades = bid_levels.match(aggressing_order)
         self.assertEqual(trades, [])
 
-        aggressing_order = orderbook.Order(5, orderbook.SELL, 13, 1)
+        aggressing_order = orderbook.Order("trader1", 5, orderbook.SELL, 13, 1)
         trades = bid_levels.match(aggressing_order)
 
         self.assertEqual(len(trades), 1)
@@ -173,14 +173,14 @@ class LevelsTest(unittest.TestCase):
 
         print(", ".join(map(str, trades)))
 
-        aggressing_order = orderbook.Order(5, orderbook.SELL, 12, 1)
+        aggressing_order = orderbook.Order("trader1", 5, orderbook.SELL, 12, 1)
         trades = bid_levels.match(aggressing_order)
 
         self.assertEqual(trades[0].price, 13)
 
         print(", ".join(map(str, trades)))
 
-        aggressing_order = orderbook.Order(5, orderbook.SELL, 12, 10)
+        aggressing_order = orderbook.Order("trader1", 5, orderbook.SELL, 12, 10)
         trades = bid_levels.match(aggressing_order)
 
         self.assertEqual(len(trades), 2)
