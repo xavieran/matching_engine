@@ -2,7 +2,7 @@
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-import orderbook
+import orderbook.orderbook as orderbook
 
 import unittest
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import orderbook
+import orderbook.orderbook as orderbook
 
 import unittest
 
