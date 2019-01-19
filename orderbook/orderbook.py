@@ -1,21 +1,13 @@
 #!/usr/bin/env python
 
 import logging
+import uuid
 
 BUY = 0
 SELL = 1
 
-global TID
-TID = 0
-
-def reset_trade_id():
-    global TID
-    TID = 0
-
 def generate_trade_id():
-    global TID
-    TID += 1
-    return TID
+    return str(uuid.uuid4())
 
 class Trade:
     def __init__(self, trade_id, trader_id, order_id, side, price, volume):
@@ -230,7 +222,7 @@ class OrderBook:
             else:
                 self.ask_levels.insert(order)
 
-        self.handle_trades(trades, order.order_id)
+        self.handle_trades(trades, order)
 
     def cancel_order(self, order_id):
         if not self.bid_levels.cancel(order_id):
@@ -239,7 +231,7 @@ class OrderBook:
 
         return True
 
-    def handle_trades(self, trades, order_id):
+    def handle_trades(self, trades, order):
         if trades:
-            self.log.info("Traded: {} with order_id: {}".format(",".join(map(str, trades)), order_id))
-            self._trade_handler(trades, order_id)
+            self.log.info("Traded: {} with order: {}".format(",".join(map(str, trades)), order))
+            self._trade_handler(trades, order)

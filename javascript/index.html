@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+</head>
+ <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+<body>
+
+<p>Place Order</p>
+
+<div ng-app="myApp" ng-controller="myCtrl">
+
+Trader: <input type="text" ng-model="trader_id"><br>
+Side: <input type = "CheckBox" name="BuySell" ng-model="buySell"><br>
+Price: <input type="number" ng-model="price" min=1><br>
+Volume: <input type="number" ng-model="volume" min=1><br>
+Submit Trade: <button ng-click="trade()">TRADE</button><br>
+UUID: <br>
+<br>
+Order: {{ price }}
+
+</div>
+
+<script src="http://localhost:8080/main.js"</script>
+
+</body>
+</html>
+
