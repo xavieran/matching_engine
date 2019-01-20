@@ -1,12 +1,14 @@
 version: '2'
 services:
     exchange:
+        build: python
         image: exchange
         ports: 
             - "6789:6789"
         networks:
             - default
     webserver:
+        build: javascript
         image: webserver
         depends_on:
             - exchange 
