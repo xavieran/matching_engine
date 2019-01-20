@@ -1,7 +1,10 @@
 var app = angular.module('myApp', []);
 
 app.controller('myCtrl', function($scope) {
-    var websocket = new WebSocket("ws://localhost:6789/");
+    var websocket = new WebSocket("ws://le-chateaud:6789/");
+
+    $scope.ready_to_trade = false;
+    $scope.input_trader_id = "";
     $scope.trader_id = "";
     $scope.side = true;
     $scope.price = 1; 
@@ -15,12 +18,13 @@ app.controller('myCtrl', function($scope) {
 	$scope.orders = [];
 	$scope.trades = [];
 
-	function uuidv4() {
-	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-		return v.toString(16);
-	  });
-	}
+    $scope.readyToTrade = () => {
+        console.log("Setting trader_id to: " + $scope.input_trader_id);
+        console.log($scope.input_trader_id);
+        $scope.trader_id = ' ' + $scope.input_trader_id;
+        $scope.ready_to_trade = true;
+        websocket.send(JSON.stringify({type: "sync_state", trader_id: $scope.trader_id}));
+    }
 
 	$scope.display_order = (order) => {
 		return order.side + " "  + order.volume + " @$" + order.price;
@@ -103,6 +107,15 @@ app.controller('myCtrl', function($scope) {
 					$scope.$apply();
 				}
 				break;
+            case 'order':
+                console.log("received order" + data.trader_id)
+                if (data.trader_id == $scope.trader_id)
+				{
+					$scope.orders.push(data)
+					$scope.$apply();
+				}
+				break;
+
             default:
                 console.error(
                     "unsupported event", data);
@@ -117,6 +130,13 @@ app.controller('myCtrl', function($scope) {
 			}
 		}
 		return -1;
+	}
+
+    function uuidv4() {
+	  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		return v.toString(16);
+	  });
 	}
 
 	var ctx = document.getElementById("orderbook_chart").getContext('2d');
@@ -149,10 +169,16 @@ app.controller('myCtrl', function($scope) {
 			]
 		},
 		options: {
+            responsive: true,
+            title: {
+                display: true,
+                text: "Orderbook and Trades"
+            },
 			scales: {
 				yAxes: [{
+                    distribution: 'linear',
 					ticks: {
-						beginAtZero:true
+						beginAtZero:false
 					}
 				}],
 				xAxes: [{
@@ -164,6 +190,19 @@ app.controller('myCtrl', function($scope) {
 				}]
 
 			},
+            /*
+            pan: {
+                enabled: true,
+                mode: 'x',
+                speed: 10,
+                threshold: 10,
+                onPan: function() {console.log("PANNED");}
+            },
+            zoom: {
+                enabled: true,
+                mode: 'x',
+                sensitivity: 0.25
+            }*/
 		}
 	});
 

@@ -10,22 +10,24 @@ def generate_trade_id():
     return str(uuid.uuid4())
 
 class Trade:
-    def __init__(self, trade_id, trader_id, order_id, side, price, volume):
+    def __init__(self, trade_id, trader_id, counterpart_id, order_id, side, price, volume):
         self.trade_id = trade_id
         self.trader_id = trader_id
+        self.counterpart_id = counterpart_id
         self.order_id = order_id
         self.side = side
         self.price = price
         self.volume = volume
 
     def __str__(self):
-        return "[{} {} {} {} {}@{}]".format(
+        return "[{} {} {} {} {}@{} with {}]".format(
             self.trade_id,
             self.trader_id,
             self.order_id, 
             "Buy" if self.side == BUY else "Sell",
             self.volume,
-            self.price)
+            self.price,
+            self.counterpart_id)
 
 class Order:
     def __init__(self, trader_id, order_id, side, price, volume):
@@ -77,7 +79,7 @@ class Level:
 
         return False
         
-    def match(self, volume):
+    def match(self, opposing_order):
         """
         Returns a list of (order_id, volume) pairs
         """
@@ -88,24 +90,24 @@ class Level:
         to_remove = []
         
         for order, i in zip(self.level, range(len(self.level))):
-            if volume == 0:
+            if opposing_order.volume == 0:
                 break
             
-            if volume < order.volume:
-                matched_volume += volume
-                order.volume -= volume
-                self.volume -= volume
+            if opposing_order.volume < order.volume:
+                matched_volume += opposing_order.volume
+                order.volume -= opposing_order.volume
+                self.volume -= opposing_order.volume
 
                 tid = generate_trade_id()
-                trades.append(Trade(tid, order.trader_id, order.order_id, order.side, order.price, volume))
+                trades.append(Trade(tid, order.trader_id, opposing_order.trader_id, order.order_id, order.side, order.price, opposing_order.volume))
                 break
             else:
                 matched_volume += order.volume
                 self.volume -= order.volume
-                volume -= order.volume
+                opposing_order.volume -= order.volume
 
                 tid = generate_trade_id()
-                trades.append(Trade(tid, order.trader_id, order.order_id, order.side, order.price, order.volume))
+                trades.append(Trade(tid, order.trader_id, opposing_order.trader_id, order.order_id, order.side, order.price, order.volume))
                 
                 to_remove.append(order.order_id)
         
@@ -173,21 +175,19 @@ class Levels:
         then the aggressing order price must be <= to the level price.
         """
         self.log.info("Trying to match order: {}".format(str(order)))
-        volume = order.volume
         trades = []
         matched_sum = 0
 
         for level in self.get_levels():
             if self.comp(order.price, level.price):
-                level_trades, matched_volume = level.match(volume)
+                level_trades, matched_volume = level.match(order)
                 trades.extend(level_trades)
-                volume -= matched_volume
                 matched_sum += matched_volume
 
                 if level.volume == 0:
                     self.remove_level(level.price)
 
-                if volume == 0:
+                if order.volume == 0:
                     break
             else:
                 break
@@ -204,6 +204,18 @@ class OrderBook:
 
     def __str__(self):
         return str(self.ask_levels) + "\n" + str(self.bid_levels)
+
+    def get_orders(self, trader_id):
+        orders = []
+        for level in self.bid_levels.get_levels():
+            for order in level.level:
+                if order.trader_id == trader_id:
+                    orders.append(order)
+        for level in self.ask_levels.get_levels():
+            for order in level.level:
+                if order.trader_id == trader_id:
+                    orders.append(order)
+        return orders
 
     def insert_order(self, order):
         self.log.info("Inserting order: {}".format(str(order)))

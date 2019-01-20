@@ -22,6 +22,6 @@ RUN pip install \
 COPY . /root/src
 
 RUN pip install -e /root/src
-#RUN python -m unittest discover /root/src/tests
+RUN python -m unittest discover /root/src/tests
 
 ENTRYPOINT ["/root/src/idle.sh"]

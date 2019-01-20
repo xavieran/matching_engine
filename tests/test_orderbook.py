@@ -28,7 +28,7 @@ class OrderBookTest(unittest.TestCase):
 
         print(ob)
 
-        ob.insert_order(orderbook.Order("trader1", 4, orderbook.SELL, 10, 10))
+        ob.insert_order(orderbook.Order("trader2", 4, orderbook.SELL, 10, 10))
 
         self.assertEqual(ob.bid_levels.prices, []) 
         self.assertEqual(len(saved_trades), 2) 

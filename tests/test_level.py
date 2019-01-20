@@ -44,8 +44,10 @@ class LevelTest(unittest.TestCase):
         self.assertEqual(len(level.level), 3)
         print("Test Match")
         print(level)
+
+        order = orderbook.Order("trader2", 4, orderbook.SELL, 10, 2)
         
-        trades, matched = level.match(2)
+        trades, matched = level.match(order)
         print(",".join(map(str, trades)))
         print(level)
         
@@ -54,7 +56,8 @@ class LevelTest(unittest.TestCase):
         self.assertEqual(level.volume, 25)
         self.assertEqual(len(level.level), 3)
         
-        trades, matched = level.match(3)
+        order = orderbook.Order("trader2", 5, orderbook.SELL, 10, 3)
+        trades, matched = level.match(order)
         
         print(",".join(map(str, trades)))
         print(level)
@@ -64,7 +67,8 @@ class LevelTest(unittest.TestCase):
         self.assertEqual(level.volume, 22)
         self.assertEqual(len(level.level), 2)
         
-        trades, matched = level.match(12)
+        order = orderbook.Order("trader2", 5, orderbook.SELL, 10, 12)
+        trades, matched = level.match(order)
         
         print(",".join(map(str, trades)))
         print(level)
@@ -75,7 +79,8 @@ class LevelTest(unittest.TestCase):
         self.assertEqual(len(level.level), 1)
         
         # TODO: Orders that take out the whole level should be left in
-        trades, matched = level.match(15)
+        order = orderbook.Order("trader2", 5, orderbook.SELL, 10, 15)
+        trades, matched = level.match(order)
         
         print(",".join(map(str, trades)))
         print(level)

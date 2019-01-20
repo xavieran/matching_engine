@@ -1,98 +1,94 @@
 <!DOCTYPE html>
 <html>
+  <title>Exchange</title>
+  <head>
+    <link rel="stylesheet" href="./main.css">
+  </head>
 
-<head>
-<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-</head>
- <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.23.0/moment.js"></script>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.js"></script>
-<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.23.0/moment.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/0.6.6/chartjs-plugin-zoom.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.js"></script>
+  <script src="http://le-chateaud:8080/main.js"></script>
 
-<div class="mainapp" ng-app="myApp" ng-controller="myCtrl">
+  <body>
 
-<p>Exchange</p>
+    <div class="mainapp" ng-app="myApp" ng-controller="myCtrl">
 
-<div class="chart">
-  <canvas id="orderbook_chart" width="300" height="100"></canvas>
-</div>
 
-<div class="trade_input_flex">
-  <div class="trade_input">
-    Trader: <input type="text" ng-model="trader_id"><br>
-    Price: <input type="number" ng-model="price" min=1><br>
-    Volume: <input type="number" ng-model="volume" min=1><br>
-    <button ng-click="trade('BUY')" style="background-color:#44ee44">BUY</button>
-    <button ng-click="trade('SELL')" style="background-color:#ee4444">SELL</button>
-  </div>
-</div>
+    <div class="chart">
+      <canvas width=50% height=50% id="orderbook_chart"></canvas>
+    </div>
 
-<style>
-div {
-  font-family: Monospace
-}
+    <div class="set_trader">
+      <input ng-hide="ready_to_trade" type="text" name="TraderID" ng-model="input_trader_id">
+        <button ng-click="readyToTrade()" ng-hide="ready_to_trade">Set Trader ID</button>
+    </div>
 
-table, th, td {
-	border: 1px solid grey;
-  border-collapse: collapse;
-  padding: 5px;
-}
+    <div class="trader" ng-if="ready_to_trade">
+      Trader ID: {{trader_id}}
+    </div>
 
-.trade_input {
-  padding: 10px;
-  display: fixed
-}
+    <div class="container">
+      <div class="ob_container">
+        <div class="trade_input_flex">
+          <div class="trade_input" ng-hide="!ready_to_trade">
+            Price: <input type="number" ng-model="price" min=1>
+            Volume: <input type="number" ng-model="volume" min=1><br>
+            <button ng-click="trade('BUY')" style="background-color:#44ee44">BUY</button>
+            <button ng-click="trade('SELL')" style="background-color:#ee4444">SELL</button>
+          </div>
+        </div>
 
-.trade_input_flex {
-  padding: 10px;
-}
+        <div class="orderbook">
+          <p><b>Orderbook<b></p>
+          <b>
+            <table>
+              <td style="background-color:#44ee44">Bid</td>
+              <td style="background-color:#ee4444">Ask</td>
+              <tr ng-repeat="level in orderbook.ask">
+                <td></td>
+                <td>{{level.volume + " @ $"  + level.price}}</td>
+              </tr>
+              <tr ng-repeat="level in orderbook.bid">
+                <td>{{level.volume + " @ $"  + level.price}}</td>
+                <td></td>
+              </tr>
+            </table>
+          </b>
+        </div>
+      </div>
 
-.orderbook {
-  display:fixed;
-  padding: 10px;
-  flex-grow: 1;
-}
-</style>
+      <div class=ob_container>
+        <div class="orders_container">
+          <div class="orders">
+            <p>Active Orders</p>
+            <table>
+              <b><td>Side</td><td>Volume</td><td>Price</td><td>Cancel</td></b>
+              <tr ng-repeat="order in orders">
+                <td ng-if="order.side == 'BUY'"  style="background-color:#44ee44">{{order.side}}</td>
+                <td ng-if="order.side == 'SELL'" style="background-color:#ee4444">{{order.side}}</td>
+                <td>{{order.volume}}</td><td>{{order.price}}</td>
+                <td><button ng-click="cancel(order.order_id)">Cancel</button></td>
+              </tr>
+            </table>
+          </div>
+        </div>
 
-<div class="orderbook">
-  <p><b>Orderbook<b></p>
-  <b>
-    <table>
-      <td style="background-color:#44ee44">Bid</td>
-      <td style="background-color:#ee4444">Ask</td>
-      <tr ng-repeat="level in orderbook.ask">
-        <td></td>
-        <td>{{level.volume + " @ $"  + level.price}}</td>
-      </tr>
-      <tr ng-repeat="level in orderbook.bid">
-        <td>{{level.volume + " @ $"  + level.price}}</td>
-        <td></td>
-      </tr>
-    </table>
-  </b>
-</div>
+        <div class="trades">
+          <p><b>Trades</b></p>
+          <table>
+            <b><td>Side</td><td>Volume</td><td>Price</td><td>Counterpart</td></b>
+            <tr ng-repeat="trade in trades">
+              <td ng-if="trade.side == 'BUY'"  style="background-color:#44ee44">{{trade.side}}</td>
+              <td ng-if="trade.side == 'SELL'" style="background-color:#ee4444">{{trade.side}}</td>
+              <td>{{trade.volume}}</td><td>{{trade.price}}</td><td>{{trade.counterpart_id}}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
 
-<div class="orders">
-  <p>Active Orders</p>
-  <li ng-repeat="order in orders">
-    <button ng-click="cancel(order.order_id)">Cancel {{display_order(order)}}</button>
-  <li>
-</div>
-
-<div class="trades">
-  <p><b>Trades</b></p>
-  <table>
-    <b><td>Side</td><td>Volume</td><td>Price</td></b>
-    <tr ng-repeat="trade in trades">
-      <td ng-if="trade.side == 'BUY'"  style="background-color:#66dd66">{{trade.side}}</td>
-      <td ng-if="trade.side == 'SELL'" style="background-color:#dd6666">{{trade.side}}</td>
-      <td>{{trade.volume}}</td><td>{{trade.price}}</td>
-    </tr>
-  </table>
-</div>
-
-<script src="http://localhost:8080/main.js"</script>
-
-</body>
+  </body>
 </html>
-
