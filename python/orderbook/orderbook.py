@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import datetime
 import logging
 import uuid
 
@@ -10,7 +11,7 @@ def generate_trade_id():
     return str(uuid.uuid4())
 
 class Trade:
-    def __init__(self, trade_id, trader_id, counterpart_id, order_id, side, price, volume):
+    def __init__(self, trade_id, trader_id, counterpart_id, order_id, side, price, volume, time):
         self.trade_id = trade_id
         self.trader_id = trader_id
         self.counterpart_id = counterpart_id
@@ -18,6 +19,7 @@ class Trade:
         self.side = side
         self.price = price
         self.volume = volume
+        self.time = time
 
     def __str__(self):
         return "[{} {} {} {} {}@{} with {}]".format(
@@ -99,7 +101,7 @@ class Level:
                 self.volume -= opposing_order.volume
 
                 tid = generate_trade_id()
-                trades.append(Trade(tid, order.trader_id, opposing_order.trader_id, order.order_id, order.side, order.price, opposing_order.volume))
+                trades.append(Trade(tid, order.trader_id, opposing_order.trader_id, order.order_id, order.side, order.price, opposing_order.volume, datetime.datetime.utcnow()))
                 break
             else:
                 matched_volume += order.volume
@@ -107,7 +109,7 @@ class Level:
                 opposing_order.volume -= order.volume
 
                 tid = generate_trade_id()
-                trades.append(Trade(tid, order.trader_id, opposing_order.trader_id, order.order_id, order.side, order.price, order.volume))
+                trades.append(Trade(tid, order.trader_id, opposing_order.trader_id, order.order_id, order.side, order.price, order.volume, datetime.datetime.utcnow()))
                 
                 to_remove.append(order.order_id)
         

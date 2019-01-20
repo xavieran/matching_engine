@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="./main.css">
   </head>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.23.0/moment.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.js"></script>
@@ -15,6 +16,11 @@
   <body>
     <div class="mainapp" ng-app="myApp" ng-controller="myCtrl">
 
+      <div class="conn_status">
+        <b style="background-color:#33ff33" ng-if="connected">Connected to exchange</b>
+        <b style="background-color:#ff3333" ng-if="!connected">Not connected to exchange</b>
+      </div>
+
       <div class="trader" ng-if="ready_to_trade">
         Trader ID: {{trader_id}}
       </div>
@@ -23,9 +29,9 @@
         <canvas height=300px id="orderbook_chart"></canvas>
       </div>
 
-      <div class="set_trader">
+      <div class="set_trader" ng-hide="!connected">
         <input ng-hide="ready_to_trade" type="text" name="TraderID" ng-model="input_trader_id">
-          <button ng-click="readyToTrade()" ng-hide="ready_to_trade">Set Trader ID</button>
+        <button ng-click="readyToTrade()" ng-hide="ready_to_trade">Set Trader ID</button>
       </div>
 
       <div class="container">
@@ -40,24 +46,16 @@
           <div class="orderbook">
             <b>
               <table>
-                <td>Hit</td>
                 <td style="background-color:#44ee44">Bid</td>
                 <td style="background-color:#ee4444">Ask</td>
-                <td>Hit</td>
                 <tr ng-repeat="level in orderbook.ask">
-                  <td></td><td></td>
-                  <td>{{level.volume + " @ $"  + level.price}}</td>
-                  <td>
-                    <button ng-if="ready_to_trade" ng-click="trade('BUY', level.price, level.volume)">HIT</button>
-                  </td>
+                  <td><button ng-if="ready_to_trade" ng-click="trade('BUY', level.price, level.volume)">HIT</button></td>
+                  <td>{{level.volume + " @ "  + (level.price | currency)}}</td>
                 </tr>
                 <tr ng-repeat="level in orderbook.bid">
-                  <td>
-                    <button ng-if="ready_to_trade" ng-click="trade('SELL', level.price, level.volume)">HIT</button>
-                  </td>
-                  <td>{{level.volume + " @ $"  + level.price}}</td>
-                  <td></td>
-                  <td></td>
+                  <td>{{level.volume + " @ "  + (level.price | currency)}}</td>
+                  <td><button ng-if="ready_to_trade" ng-click="trade('SELL', level.price, level.volume)">HIT</button></td>
+                    
                 </tr>
               </table>
             </b>
@@ -72,7 +70,7 @@
               <tr ng-repeat="order in orders">
                 <td ng-if="order.side == 'BUY'"  style="background-color:#44ee44">{{order.side}}</td>
                 <td ng-if="order.side == 'SELL'" style="background-color:#ee4444">{{order.side}}</td>
-                <td>{{order.volume}}</td><td>{{order.price}}</td>
+                <td>{{order.volume}}</td><td>{{order.price | currency}}</td>
                 <td><button ng-click="cancel(order.order_id)">✘</button></td>
               </tr>
             </table>
@@ -81,25 +79,29 @@
           <div class="trades">
             <p><b>Trades</b></p>
             <table>
-              <td><b>Side</b></td><td><b>Volume</b></td><td><b>Price</b></td><td><b>Counterpart</b></td>
+              <td><b>Side</b></td><td><b>Volume</b></td><td><b>Price</b></td><!--td><b>Counterpart</b></td-->
               <tr ng-repeat="trade in trades">
                 <td ng-if="trade.side == 'BUY'"  style="background-color:#44ee44">{{trade.side}}</td>
                 <td ng-if="trade.side == 'SELL'" style="background-color:#ee4444">{{trade.side}}</td>
-                <td>{{trade.volume}}</td><td>{{trade.price}}</td><td>{{trade.counterpart_id}}</td>
+                <td>{{trade.signed_volume}}</td><td>{{trade.price | currency}}</td><!--td>{{trade.counterpart_id}}</td-->
               </tr>
             </table>
           </div>
-          <!--div class="pnl">
+          <div class="pnl">
             <p><b>PnL</b></p>
             <table>
               <tr>
-                <td><b>Net Position</b></td><td><b>PnL</b></td><td><b>PnL Mark to Theo</b></td>
+                <td><b>Net Pos</b></td><td><b>PnL</b></td>
+                <td><b>Buy Px</b></td><td><b>Tot Buy</b></td>
+                <td><b>Sell Px<b></td><td><b>Tot Sell<b></td>
               </tr>
               <tr>
-                <td>{{net_position}}</td><td>{{profit_and_loss}}</td><td><td>{{pnl_marked_to_theo}}</td>
+                <td>{{net_position}}</td><td>{{pnl | currency}}</td>
+                <td>{{avg_buy_px | currency}}<td>{{tot_buy_vol}}</td>
+                <td>{{avg_sell_px | currency}}<td>{{tot_sell_vol}}</td>
               </tr>
             </table>
-          </div-->
+          </div>
         </div>
       </div>
     </div>

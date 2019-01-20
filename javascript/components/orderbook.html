@@ -1,0 +1,27 @@
+<div class="orderbook">
+  <table>
+    <tr>
+      <td>Hit</td>
+      <td style="background-color:#44ee44">Bid</td>
+      <td style="background-color:#ee4444">Ask</td>
+      <td>Hit</td>
+    </tr>
+    <tr ng-repeat="level in orderbook.ask">
+      <td></td>
+      <td></td>
+      <td>{{level.volume + " @ $"  + level.price}}</td>
+      <td>
+      <button ng-if="ready_to_trade" ng-click="trade('BUY', level.price, level.volume)">HIT</button>
+      </td>
+    </tr>
+    <tr ng-repeat="level in orderbook.bid">
+      <td>
+      <button ng-if="ready_to_trade" ng-click="trade('SELL', level.price, level.volume)">HIT</button>
+      </td>
+      <td>{{level.volume + " @ $"  + level.price}}</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </table>
+</div>
+

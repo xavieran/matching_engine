@@ -2,7 +2,7 @@ var app = angular.module('myApp', []);
 
 app.controller('myCtrl', function($scope) {
     var websocket = new WebSocket("ws://le-chateaud:6789/");
-
+    $scope.connected = false;
     $scope.ready_to_trade = false;
     $scope.input_trader_id = "";
     $scope.trader_id = "";
@@ -12,7 +12,11 @@ app.controller('myCtrl', function($scope) {
     $scope.order_id = 0;
 
     $scope.net_position = 0;
-    $scope.profit_and_loss = 0;
+    $scope.pnl = 0;
+	$scope.avg_buy_px = 0;
+	$scope.avg_sell_px = 0;
+	$scope.tot_buy_vol= 0;
+	$scope.tot_ask_vol= 0;
 
     $scope.top_bids = []
     $scope.top_asks = []
@@ -59,6 +63,27 @@ app.controller('myCtrl', function($scope) {
 		
 		console.log("Cancelled " + order_id)
 	};
+
+	$(window).on('beforeunload', function(){
+		websocket.close();
+	});
+
+
+    websocket.onopen= function (event) {
+        console.log("Opened connection");
+        $scope.connected = true;
+        $scope.$apply();
+    }
+
+    websocket.onclose = function (event) {
+        $scope.connected = false;
+        $scope.$apply();
+        console.log("Connection closed");
+    }
+     
+    websocket.onerror = function (event) {
+        console.log("Failed to connect");
+    }
         
     websocket.onmessage = function (event) {
         data = JSON.parse(event.data);
@@ -67,7 +92,7 @@ app.controller('myCtrl', function($scope) {
             case 'orderbook':
                 let bid = null;
                 let ask = null;
-
+				time = moment(data.time);
 				if (data.bid.length != 0){
                     bid = data.bid[0].price
                 }
@@ -77,12 +102,14 @@ app.controller('myCtrl', function($scope) {
                 }
 
                 $scope.top_bids.push({
-						't': new Date(),
-						'y': bid});
+					't': time,
+					'y': bid});
 
                 $scope.top_asks.push({
-                    't': new Date(),
+                    't': time,
                     'y': ask});
+
+				console.log(time)
 
 				console.log($scope.top_asks)
 				console.log($scope.top_bids)
@@ -97,8 +124,15 @@ app.controller('myCtrl', function($scope) {
                 console.log("received trade" + data.trader_id)
 				if (data.trader_id == $scope.trader_id)
 				{
-					$scope.trades.push(data);
-                    $scope.trade_prices.push({'t':new Date(), 'y':data.price});
+					if (data.side == "BUY"){
+						data.signed_volume = data.volume;
+					}
+					if (data.side == "SELL"){
+						data.signed_volume = -1 * data.volume;
+					}
+					$scope.trades.unshift(data);
+					update_pnl($scope.trades);
+                    $scope.trade_prices.push({'t':moment(data.time), 'y':data.price});
 					let index = findWithAttr($scope.orders, "order_id", data.order_id);
 					if (index != -1){
 						$scope.orders[index].volume -= data.volume;
@@ -125,6 +159,40 @@ app.controller('myCtrl', function($scope) {
         }
 
     };
+
+	function update_pnl(trades){
+		net_pos = 0;
+		tot_buy = 0;
+		tot_buy_val = 0;
+		tot_sell = 0;
+		tot_sell_val = 0;
+		for (var i = 0; i < trades.length; i += 1)
+		{
+			vol = trades[i].signed_volume
+			px = trades[i].price
+			val = vol * px
+			net_pos += vol
+			if (vol > 0){
+				tot_buy += vol;
+				tot_buy_val += val;
+			}
+			if (vol < 0){
+				tot_sell += vol;
+				tot_sell_val += val;
+			}
+		}
+		console.log(tot_buy_val);
+		console.log(tot_sell_val);
+		avg_buy_px = tot_buy_val / tot_buy;
+		avg_sell_px = tot_sell_val / tot_sell;
+
+		$scope.net_position = net_pos;
+		$scope.pnl = avg_sell_px * (-1 * tot_sell) - avg_buy_px * tot_buy 
+		$scope.avg_buy_px = avg_buy_px;
+		$scope.avg_sell_px = avg_sell_px;
+		$scope.tot_buy_vol = tot_buy;
+		$scope.tot_sell_vol = tot_sell;
+	}
 
 	function findWithAttr(array, attr, value) {
 		for(var i = 0; i < array.length; i += 1) {
@@ -194,7 +262,6 @@ app.controller('myCtrl', function($scope) {
 				}]
 
 			},
-            /*
             pan: {
                 enabled: true,
                 mode: 'x',
@@ -206,9 +273,8 @@ app.controller('myCtrl', function($scope) {
                 enabled: true,
                 mode: 'x',
                 sensitivity: 0.25
-            }*/
+            }
 		}
 	});
-
 });
 

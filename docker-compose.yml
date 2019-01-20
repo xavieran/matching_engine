@@ -2,10 +2,12 @@ version: '2'
 services:
     exchange:
         image: exchange
+        ports: 
+            - "6789:6789"
         networks:
             - default
     webserver:
-        image: node
+        image: webserver
         depends_on:
             - exchange 
         networks:

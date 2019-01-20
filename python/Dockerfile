@@ -24,4 +24,5 @@ COPY . /root/src
 RUN pip install -e /root/src
 RUN python -m unittest discover /root/src/tests
 
-ENTRYPOINT ["/root/src/idle.sh"]
+COPY entrypoint.sh /
+ENTRYPOINT ["/entrypoint.sh"]
