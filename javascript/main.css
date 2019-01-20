@@ -6,6 +6,14 @@ div {
   padding: 5px;
 }
 
+table thead {
+  display: block;
+}
+
+table tbody {
+  display: block;
+}
+
 table, th, td {
   border: 1px solid grey;
   border-collapse: collapse;
@@ -13,13 +21,15 @@ table, th, td {
 }
 
 .mainapp{
-    height: 100%;
-    width: 100%;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .set_trader{
-    height: 10%;
-    width: 20%;
+  height: 10%;
+  width: 20%;
 }
 
 .trader{
@@ -28,51 +38,48 @@ table, th, td {
   border: 2px solid grey;
   text-align: center;
   font-size: 18pt;
+  height: 5%;
 }
 
-
-.container{
-    height: 100%;
-    width: 100%;
-}
-
-.ob_container{
-    height: 100%;
-    width: 50%;
-    display: flex;
-}
-
-.orders_container{
-    height: 100%;
-    width: 50%;
-    display: flex;
-}
-
-.trade_input {
-  border: 2px solid grey;
-}
-
-.trade_input_flex {
-  width: 100%;
+.chart{
   height: 30%;
 }
 
-.orderbook {
+.container{
+  height: 100%;
   width: 100%;
-  height: 70%;
-  border: 2px solid grey;
-  margin: 2px;
+  display: flex;
+  flex-direction: row;
+}
+
+.ob_container{
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.trade_input {
+}
+
+.orderbook {
   text-align: center
+}
+
+.orders_trades_container{
+  height: 100%;
+  width: 80%;
+  display: flex;
+  flex-direction:row;
+  flex-grow: 6;
 }
 
 .orders{
-  border: 2px solid grey;
-  text-align: center
+  text-align: center;
+  height: 100%;
 }
 
 .trades {
-  border: 2px solid grey;
-  text-align: center
+  text-align: center;
+  height: 100%;
 }
-
-

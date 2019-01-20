@@ -178,6 +178,7 @@ if __name__ == "__main__":
             await asyncio.wait([user.send(message) for user in USERS])
 
     async def register(websocket):
+        print(websocket)
         USERS.add(websocket)
         await notify_users()
 

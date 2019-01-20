@@ -11,6 +11,9 @@ app.controller('myCtrl', function($scope) {
     $scope.volume = 1; 
     $scope.order_id = 0;
 
+    $scope.net_position = 0;
+    $scope.profit_and_loss = 0;
+
     $scope.top_bids = []
     $scope.top_asks = []
     $scope.trade_prices = []
@@ -30,14 +33,14 @@ app.controller('myCtrl', function($scope) {
 		return order.side + " "  + order.volume + " @$" + order.price;
 	}
 
-	$scope.trade = (side) => {
+	$scope.trade = (side, price, volume) => {
         let order = {
             "type":"insert", 
             "trader_id": $scope.trader_id,
             "order_id":uuidv4(),
             "side": side,
-            "price": $scope.price,
-            "volume": $scope.volume}
+            "price": price,
+            "volume": volume}
 
         $scope.orders.push(order)
         websocket.send(JSON.stringify(order))
@@ -170,6 +173,7 @@ app.controller('myCtrl', function($scope) {
 		},
 		options: {
             responsive: true,
+            maintainAspectRatio: false,
             title: {
                 display: true,
                 text: "Orderbook and Trades"
