@@ -1,28 +1,13 @@
 version: '2'
 services:
-    rabbitmq:
-        image: rabbitmq
-        environment:
-#            RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
-            RABBITMQ_DEFAULT_USER: "rabbitmq"
-            RABBITMQ_DEFAULT_PASS: "rabbitmq"
-            RABBITMQ_DEFAULT_VHOST: "/"
-        ports:
-            - "5672:5672"
-            - "15672:15672"
-            - "55672:55672"
-        networks:
-            - default
     exchange:
         image: exchange
-        depends_on:
-            - rabbitmq
         networks:
             - default
     webserver:
         image: node
         depends_on:
-            - rabbitmq
+            - exchange 
         networks:
             - default
         ports:

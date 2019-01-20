@@ -5,21 +5,90 @@
 <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
 </head>
  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.23.0/moment.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.js"></script>
 <body>
 
-<p>Place Order</p>
+<div class="mainapp" ng-app="myApp" ng-controller="myCtrl">
 
-<div ng-app="myApp" ng-controller="myCtrl">
+<p>Exchange</p>
 
-Trader: <input type="text" ng-model="trader_id"><br>
-Side: <input type = "CheckBox" name="BuySell" ng-model="buySell"><br>
-Price: <input type="number" ng-model="price" min=1><br>
-Volume: <input type="number" ng-model="volume" min=1><br>
-Submit Trade: <button ng-click="trade()">TRADE</button><br>
-UUID: <br>
-<br>
-Order: {{ price }}
+<div class="chart">
+  <canvas id="orderbook_chart" width="300" height="100"></canvas>
+</div>
 
+<div class="trade_input_flex">
+  <div class="trade_input">
+    Trader: <input type="text" ng-model="trader_id"><br>
+    Price: <input type="number" ng-model="price" min=1><br>
+    Volume: <input type="number" ng-model="volume" min=1><br>
+    <button ng-click="trade('BUY')" style="background-color:#44ee44">BUY</button>
+    <button ng-click="trade('SELL')" style="background-color:#ee4444">SELL</button>
+  </div>
+</div>
+
+<style>
+div {
+  font-family: Monospace
+}
+
+table, th, td {
+	border: 1px solid grey;
+  border-collapse: collapse;
+  padding: 5px;
+}
+
+.trade_input {
+  padding: 10px;
+  display: fixed
+}
+
+.trade_input_flex {
+  padding: 10px;
+}
+
+.orderbook {
+  display:fixed;
+  padding: 10px;
+  flex-grow: 1;
+}
+</style>
+
+<div class="orderbook">
+  <p><b>Orderbook<b></p>
+  <b>
+    <table>
+      <td style="background-color:#44ee44">Bid</td>
+      <td style="background-color:#ee4444">Ask</td>
+      <tr ng-repeat="level in orderbook.ask">
+        <td></td>
+        <td>{{level.volume + " @ $"  + level.price}}</td>
+      </tr>
+      <tr ng-repeat="level in orderbook.bid">
+        <td>{{level.volume + " @ $"  + level.price}}</td>
+        <td></td>
+      </tr>
+    </table>
+  </b>
+</div>
+
+<div class="orders">
+  <p>Active Orders</p>
+  <li ng-repeat="order in orders">
+    <button ng-click="cancel(order.order_id)">Cancel {{display_order(order)}}</button>
+  <li>
+</div>
+
+<div class="trades">
+  <p><b>Trades</b></p>
+  <table>
+    <b><td>Side</td><td>Volume</td><td>Price</td></b>
+    <tr ng-repeat="trade in trades">
+      <td ng-if="trade.side == 'BUY'"  style="background-color:#66dd66">{{trade.side}}</td>
+      <td ng-if="trade.side == 'SELL'" style="background-color:#dd6666">{{trade.side}}</td>
+      <td>{{trade.volume}}</td><td>{{trade.price}}</td>
+    </tr>
+  </table>
 </div>
 
 <script src="http://localhost:8080/main.js"</script>

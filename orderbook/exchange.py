@@ -2,25 +2,31 @@
 
 import orderbook
 
+import asyncio
 import logging
 import pika 
 from queue import Queue
 import sys
 from threading import Thread
 import ujson 
+import websockets
 
 
 class Exchange:
-    def __init__(self):
+    def __init__(self, broadcaster=None):
         self.orderbook = orderbook.OrderBook(self.trade_handler)
         self.log = logging.getLogger("exchange")
-        self.broadcast_queue = Queue()
 
+        self.broadcaster = broadcaster
+
+        self.broadcast_queue = Queue()
+        """
         self.broadcast_thread = Thread(
             target=self.process_broadcast_queue,
             name="broadcast_thread", 
             daemon=True)
         self.broadcast_thread.start()
+        """
 
     def trade_handler(self, trades, order):
         self.log.info("Handling trades: {} with order: {}".format(",".join(map(str,trades)), order))
@@ -46,6 +52,7 @@ class Exchange:
         {"type":"cancel", "trader_id": "str", "order_id": "uuid"}
         {"type":"trade", "trade_id": "uuid", "trader_id": "str", "order_id": "uuid", "side": "BUY|SELL", "price": "int", "volume": "unsigned"}
         {"type":"update"}
+        {"type":"get_state", "trader_id":"str"}
         {"type":"orderbook", "bid": [], "ask": []}
         """
         self.log.info("Decoding message: {}".format(message))
@@ -85,8 +92,9 @@ class Exchange:
         self.broadcast_orderbook()
 
     def broadcast_orderbook(self):
-        self.log.info("Broadcasting orderbook:\n {}".format(str(self.orderbook)))
+        self.log.info("Pushing orderbook:\n {}".format(str(self.orderbook)))
         dict = {
+            "type":"orderbook",
             "bid":[{"price":l.price, "volume": l.volume} for l in self.orderbook.bid_levels.get_levels()],
             "ask":[{"price":l.price, "volume": l.volume} for l in self.orderbook.ask_levels.get_levels()]}
 
@@ -94,7 +102,7 @@ class Exchange:
         self.broadcast_queue.put(json)
 
     def broadcast_trade(self, trade):
-        self.log.info("Broadcasting trade: {}".format(trade))
+        self.log.info("Pushing trade: {}".format(trade))
         json = ujson.dumps({
             "type": "trade",
             "trader_id":trade.trader_id, 
@@ -108,48 +116,68 @@ class Exchange:
     def process_broadcast_queue(self):
         while 1:
             message = self.broadcast_queue.get()
-            print(message)
-
-class Comms:
-    def __init__(self):
-        self.exchange = Exchange()
-
-    def main(self, connection):
-            
-        channel = connection.channel()
-        
-        #try:
-        for method_frame, properties, body in channel.consume('order_queue'):
-            self.exchange.handle_message(body)
-            channel.basic_ack(method_frame.delivery_tag)
-        """except ValueError:
-            # Cancel the consumer and return any pending messages
-            requeued_messages = channel.cancel()
-            print('Requeued %i messages' % requeued_messages)
-            connection.close()"""
-
+            self.log.info("Broadcasting message: {}".format(message))
+            if (self.broadcaster is not None):
+                self.broadcaster.broadcast(message)
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
+    log = logging.getLogger("websockets")
+    
 
-    params = pika.ConnectionParameters(
-        host="localhost", 
-        port=5672,
-        credentials=pika.PlainCredentials("rabbitmq","rabbitmq"))
+    exchange = Exchange(broadcaster=None)
 
-    if sys.argv[1] == "c":
-        connection = pika.BlockingConnection(params)
-        channel = connection.channel()
-        channel.queue_declare(queue="order_queue")
+    USERS = set()
 
-        channel.basic_publish(
-            exchange='',
-            routing_key='order_queue',
-            body=sys.argv[2])
+    def state_event():
+        dict = {
+            "type": "orderbook",
+            "bid":[{"price":l.price, "volume": l.volume} for l in exchange.orderbook.bid_levels.get_levels()],
+            "ask":[{"price":l.price, "volume": l.volume} for l in exchange.orderbook.ask_levels.get_levels()]}
 
-        connection.close()
+        return ujson.dumps(dict)
 
-    else:
-        connection = pika.BlockingConnection(params)
-        comms = Comms()
-        comms.main(connection)
+    def users_event():
+        return ujson.dumps({'type': 'users', 'count':len(USERS)})
+
+    async def process_broadcast_queue():
+        log.info("Process broadcast queue")
+        while not exchange.broadcast_queue.empty():
+            message = exchange.broadcast_queue.get()
+            log.info("Broadcasting {}".format(message))
+            await asyncio.wait([user.send(message) for user in USERS])
+
+    async def notify_state():
+        if USERS:
+            message = state_event()
+            await asyncio.wait([user.send(message) for user in USERS])
+
+    async def notify_users():
+        if USERS:
+            message = users_event()
+            await asyncio.wait([user.send(message) for user in USERS])
+
+    async def register(websocket):
+        USERS.add(websocket)
+        await notify_users()
+
+    async def unregister(websocket):
+        USERS.remove(websocket)
+        await notify_users()
+
+    async def process_order(websocket, path):
+        await register(websocket)
+        try:
+            await websocket.send(state_event())
+            async for message in websocket:
+                exchange.handle_message(message) 
+                await notify_state()
+                await process_broadcast_queue()
+        finally:
+            await unregister(websocket)
+
+    asyncio.get_event_loop().run_until_complete(
+        websockets.serve(process_order, 'localhost', 6789))
+    asyncio.get_event_loop().run_forever()
+
+
