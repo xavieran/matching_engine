@@ -28,7 +28,7 @@ app.controller('myCtrl', function($scope) {
     $scope.readyToTrade = () => {
         console.log("Setting trader_id to: " + $scope.input_trader_id);
         console.log($scope.input_trader_id);
-        $scope.trader_id = ' ' + $scope.input_trader_id;
+        $scope.trader_id = ($scope.input_trader_id + ' ').trim()
         $scope.ready_to_trade = true;
         websocket.send(JSON.stringify({type: "sync_state", trader_id: $scope.trader_id}));
     }
@@ -122,8 +122,8 @@ app.controller('myCtrl', function($scope) {
                 break;
 			case 'trade':
                 console.log("received trade" + data.trader_id)
-				if (data.trader_id == $scope.trader_id)
-				{
+                $scope.trade_prices.push({'t':moment(data.time), 'y':data.price});
+				if (data.trader_id == $scope.trader_id){
 					if (data.side == "BUY"){
 						data.signed_volume = data.volume;
 					}
@@ -132,7 +132,6 @@ app.controller('myCtrl', function($scope) {
 					}
 					$scope.trades.unshift(data);
 					update_pnl($scope.trades);
-                    $scope.trade_prices.push({'t':moment(data.time), 'y':data.price});
 					let index = findWithAttr($scope.orders, "order_id", data.order_id);
 					if (index != -1){
 						$scope.orders[index].volume -= data.volume;
@@ -146,8 +145,7 @@ app.controller('myCtrl', function($scope) {
 				break;
             case 'order':
                 console.log("received order" + data.trader_id)
-                if (data.trader_id == $scope.trader_id)
-				{
+                if (data.trader_id == $scope.trader_id){
 					$scope.orders.push(data)
 					$scope.$apply();
 				}

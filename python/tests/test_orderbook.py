@@ -53,3 +53,24 @@ class OrderBookTest(unittest.TestCase):
         self.assertEqual(ob.ask_levels.prices, [12])
 
         print(ob)
+
+    def test_insert_order(self):
+        "Test Orderbook Insert Order Hit Through"
+        saved_trades = []
+        def trade_handler(trades, order_id):
+            saved_trades.extend(trades)
+
+        ob = orderbook.OrderBook(trade_handler)
+        
+        ob.insert_order(orderbook.Order("trader1", 0, orderbook.BUY, 10, 5))
+        ob.insert_order(orderbook.Order("trader1", 1, orderbook.BUY, 11, 5))
+        ob.insert_order(orderbook.Order("trader1", 2, orderbook.BUY, 12, 5))
+        self.assertEqual(ob.bid_levels.prices, [12, 11, 10])
+        ob.insert_order(orderbook.Order("trader1", 3, orderbook.SELL, 10, 8))
+
+        self.assertEqual(len(saved_trades), 2)
+        self.assertEqual(saved_trades[0].volume, 5)
+        self.assertEqual(saved_trades[0].price, 12)
+        self.assertEqual(saved_trades[1].volume, 3)
+        self.assertEqual(saved_trades[1].price, 11)
+

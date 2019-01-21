@@ -154,6 +154,7 @@ class Exchange:
             "type": "trade",
             "trader_id":trade.trader_id, 
             "counterpart_id":trade.counterpart_id,
+            "trade_id":trade.trade_id,
             "order_id":trade.order_id,
             "side": "BUY" if trade.side == orderbook.BUY else "SELL",
             "price": trade.price,
@@ -199,5 +200,4 @@ if __name__ == "__main__":
     asyncio.get_event_loop().run_until_complete(
         websockets.serve(process_order, '', port))
     asyncio.get_event_loop().run_forever()
-
 

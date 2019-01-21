@@ -102,6 +102,7 @@ class Level:
 
                 tid = generate_trade_id()
                 trades.append(Trade(tid, order.trader_id, opposing_order.trader_id, order.order_id, order.side, order.price, opposing_order.volume, datetime.datetime.utcnow()))
+                opposing_order.volume = 0
                 break
             else:
                 matched_volume += order.volume
