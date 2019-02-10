@@ -1,13 +1,23 @@
-table, th, td {
-  border: 1px solid grey;
-  border-collapse: collapse;
-  padding: 5px;
+table.orderbookTable table, th, td {
+    border: 1px solid grey;
+    border-collapse: collapse;
+    padding: 5px;
 }
 
 .tradeInput{
     display: flex;
     flex-direction: column;
-    width: 30%
+    width: 50%
+}
+
+.quoteInput{
+    border-style: solid;
+    border-width: 1px;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    border-radius: 5px;
+    padding-left: 2px;
 }
 
 .tradeInputButtons{
