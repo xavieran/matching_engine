@@ -1,0 +1,81 @@
+table, th, td {
+  border: 1px solid grey;
+  border-collapse: collapse;
+  padding: 5px;
+}
+
+.tradeInput{
+    display: flex;
+    flex-direction: column;
+    width: 30%
+}
+
+.tradeInputButtons{
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.buyButton{
+    background: #44ee44;
+    font-weight: bold;
+}
+
+.sellButton{
+    background: #ee4444;
+    font-weight: bold;
+}
+
+.cancelButton{
+    background: #eeeeee;
+    font-weight: bold;
+}
+
+.priceHeader {
+    background: #dddddd;
+    font-weight: bold;
+}
+
+.bidHeader {
+    background: #44ee44;
+    font-weight: bold;
+}
+
+.askHeader {
+    background: #ee4444;
+    font-weight: bold;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.tradeInputAndOrderbook{
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.tradeListAndPnL{
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.orderbookGraph{
+    width: 50%;
+    height: 10%;
+    overflow: hidden;
+}
+
+.traderInputs{
+    display: flex;
+    flex-direction: row;
+    flex-grow: 2;
+}
+
+.traderInterface{
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}

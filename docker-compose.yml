@@ -8,13 +8,14 @@ services:
         networks:
             - default
     webserver:
-        build: javascript
+        build: react
         image: webserver
         depends_on:
             - exchange 
         networks:
             - default
         ports:
-            - "8080:8080"
+            #- "8080:8080"
+            - "3000:3000"
         volumes:
-            - ./javascript:/html
+            - ./react:/html
