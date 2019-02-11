@@ -25,6 +25,7 @@ class Root extends React.Component {
                 bid: [],
                 ask: []
             },
+            orderbook_updates: [],
             orders: [],
             trades: [],
             pnl: {},
@@ -55,6 +56,8 @@ class Root extends React.Component {
             orderbook: this.exchange_interface.orderbook,
             trades: this.exchange_interface.trades,
             orders: this.exchange_interface.orders,
+            hints: this.exchange_interface.hints,
+            orderbook_updates: this.exchange_interface.orderbook_updates,
             pnl: this.exchange_interface.pnl
         })
     }
@@ -62,6 +65,7 @@ class Root extends React.Component {
     onopen(event){
         console.log("Received onopen", event);
         this.setState({connected: true})
+        this.exchange_interface.send_login("")
     }
 
     onclose(event){
@@ -71,6 +75,7 @@ class Root extends React.Component {
 
     connect(){
         console.log("About to connect");
+        this.exchange_interface.connect()
     }
 
     send_order(side, price, volume){
@@ -79,6 +84,10 @@ class Root extends React.Component {
 
     send_cancel(order_id){
         this.exchange_interface.send_cancel(order_id, this.state.trader_id)
+    }
+
+    send_hint(hint){
+        this.exchange_interface.send_hint(hint, "")
     }
 
     login(trader_id)
@@ -113,7 +122,8 @@ class Root extends React.Component {
                   <Login 
                     login={this.login.bind(this)}
                     connected={this.state.connected}
-                    trader_id={this.state.trader_id} />} />
+                    trader_id={this.state.trader_id}
+                    redirect={"/TraderInterface"}/>} />
                 <Route exact path="/TraderInterface" render={props => {
                   if (this.state.trader_id == null){
                       return <Redirect push to="/" />
@@ -122,6 +132,7 @@ class Root extends React.Component {
                         trade={this.send_order.bind(this)}
                         cancel={this.send_cancel.bind(this)}
                         orderbook={this.state.orderbook}
+						orderbook_updates={this.state.orderbook_updates}
                         orders={this.state.orders}
                         trades={this.state.trades}
                         hints={this.state.hints}/>
@@ -130,12 +141,18 @@ class Root extends React.Component {
                 <Route exact path="/monitor" render={props => {
                   return <MonitorInterface
                     orderbook={this.state.orderbook}
+                    orderbook_updates={this.state.orderbook_updates}
+                    hints={this.state.hints}
                     trades={this.state.trades}/>}}
                 />
                 <Route exact path="/admin" render={props => {
-                  return <MonitorInterface
-                    orderbook={this.state.orderbook}
-                    trades={this.state.trades}/>}}
+                    return <MonitorInterface
+                      hint={this.send_hint.bind(this)}
+                      orderbook={this.state.orderbook}
+                      orderbook_updates={this.state.orderbook_updates}
+                      hints={this.state.hints}
+                      trades={this.state.trades}/>
+                }}
                 />
 
               </div>

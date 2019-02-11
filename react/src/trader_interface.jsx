@@ -4,6 +4,8 @@ import OrderbookGraph from './orderbook_graph.jsx';
 import NumericInput from 'react-numeric-input'
 
 import Alert from 'react-bootstrap/Alert'
+import Button from 'react-bootstrap/Button'
+import Form from 'react-bootstrap/Form'
 import Table from 'react-bootstrap/Table'
 
 import React from 'react'
@@ -167,16 +169,44 @@ class Orderbook extends React.Component {
     }
 }
 
+class HintInput extends React.Component {
+    render(){
+        return (
+            <Form>
+              <Form.Group controlId="formHint">
+                <Form.Control 
+                  as="textarea"
+                  rows="2"
+                  size="lg" 
+                  type="text" 
+                  placeholder="Enter hint" 
+                  ref={(ref) => this.hint = ref}/>
+                <Button 
+                  size="lg" 
+                  variant="primary" 
+                  onClick={() => {
+                      if (this.hint.value){
+                          this.props.send_hint(this.hint.value)
+                      }
+                      this.hint.value=null
+                  }}>
+                  Send Hint
+                </Button>
+              </Form.Group>
+            </Form>
+        )
+    }
+}
+
 class TraderInterface extends React.Component {
     render() {
         return (
             <div className="traderInterface">
               <Alert variant="info">
-                  {this.props.hints.map((hint) => <><p>{hint}</p><hr /></>)}
+                  {this.props.hints.map((hint) => <div key={hint}><p>{hint}</p><hr /></div>)}
               </Alert>
               <OrderbookGraph 
-			    ask={[1,2,3,7,6,20,15,5]}
-				bid={[1,2,3,7,6,20,15,5]}
+			    data={this.props.orderbook_updates}
 				trade={[]}
 		      />
               <div className="traderInputs">
@@ -202,11 +232,16 @@ class TraderInterface extends React.Component {
 
 class MonitorInterface extends React.Component {
     render() {
+        console.log(this.props)
         return (
             <div className="traderInterface">
+              <Alert variant="info">
+                  {this.props.hints.map((hint) => <div key={hint}><p>{hint}</p><hr /></div>)}
+              </Alert>
+              <HintInput 
+                  send_hint={(hint) => this.props.hint(hint)}/>
               <OrderbookGraph 
-			    ask={[1,2,3,7,6,20,15,5]}
-				bid={[1,2,3,7,6,20,15,5]}
+			    data={this.props.orderbook_updates}
 				trade={[]}
               />
               <div className="traderInputs">

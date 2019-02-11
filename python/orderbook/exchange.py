@@ -19,17 +19,13 @@ class Exchange:
     def __init__(self, broadcaster=None):
         self.orderbook = orderbook.OrderBook(self.trade_handler)
         self.orderbook_updates = []
+        self.hints = []
         self.trades = {}
         self.traders = {}
         self.log = logging.getLogger("exchange")
         self.time_fmt = "%Y%m%dT%H%M%S"
         self.broadcaster = broadcaster
         self.broadcast_queue = Queue()
-
-    def login_handler(self, message, user):
-        tid = message["trader_id"]
-        self.log.info("Registering {}".format(tid))
-        self.traders[tid] = user
 
     def trade_handler(self, trades, order):
         self.log.info("Handling trades: {} with order: {}".format(",".join(map(str,trades)), order))
@@ -62,11 +58,13 @@ class Exchange:
         {"type":"cancel", "trader_id": "str", "order_id": "uuid"}
         {"type":"trade", "trade_id": "uuid", "trader_id": "str", "order_id": "uuid", "side": "BUY|SELL", "price": "int", "volume": "unsigned"}
         {"type":"order", "trader_id": "str", "order_id": "uuid", "side": "BUY|SELL", "price": "int", "volume": "unsigned"}
+        {"type":"hint", "trader_id": "str", "hint": str}
         {"type":"login", "trader_id":"str"}
-        {"type":"sync_state", "trader_id":"str"}
+        {"type":"sync_state", "orders":"str"} fixme
         {"type":"orderbook", "bid": [], "ask": []}
         """
         self.log.info("Decoding message: {}".format(message))
+
         try:
             decoded = ujson.loads(message)
             type = decoded["type"]
@@ -81,36 +79,36 @@ class Exchange:
                     self.handle_insert_message(decoded)
                 elif type == "cancel":
                     self.handle_cancel_message(decoded)
+                elif type == "hint":
+                    self.handle_hint_message(decoded)
 
         except ValueError as e:
             self.log.warn("Failed to decode message: {}".format(e))
 
-    def handle_sync_state(self, msg, recipients):
-        tid = msg['trader_id']
-        self.traders.add(tid)
-        self.log.info("Syncing state for: {}".format(tid))
-        orders = self.orderbook.get_orders(tid)
-        trades = self.trades[tid] if tid in self.trades else []
-
-        for ob in self.orderbook_updates:
-            self.broadcast_queue.put((ob, recipients))
-
-        for o in orders:
-            self.broadcast_order(o, recipients)
-
-        for t in trades:
-            self.broadcast_trade(t, recipients)
+    def login_handler(self, message, user):
+        tid = message["trader_id"]
+        self.log.info("Registering {}".format(tid))
+        self.traders[tid] = user
+        self.broadcast_sync_state(tid, [user])
 
     def handle_insert_message(self, msg):
-        price = int(msg["price"])
-        volume = int(msg["volume"])
+        try:
+            price = int(msg["price"])
+            volume = int(msg["volume"])
+        except: 
+            self.log.info("Ignoring bad insert {}".format(str(msg)))
+            return
+
+        if price <= 0 or volume <= 0 or msg["side"] not in ("BUY", "SELL"):
+            self.log.info("Ignoring bad insert {}".format(str(msg)))
+            return
 
         order = orderbook.Order(
             msg['trader_id'],
             msg['order_id'],
             orderbook.BUY if msg["side"] == "BUY" else orderbook.SELL,
-            int(msg["price"]),
-            int(msg["volume"]))
+            price, 
+            volume)
 
         self.log.info("Handling order: {}".format(str(order)))
 
@@ -131,6 +129,70 @@ class Exchange:
             self.broadcast_cancel(msg, [self.traders[trader_id]])
             self.broadcast_orderbook(ALL)
 
+    def handle_hint_message(self, message):
+        self.hints.append(message["hint"])
+        self.broadcast_hints(ALL)
+
+    def order_to_dict(self, order):
+        return {
+            "type":"order_ack",
+            "trader_id": order.trader_id,
+            "order_id": order.order_id,
+            "side": "BUY" if order.side == orderbook.BUY else "SELL",
+            "price": order.price,
+            "volume": order.volume}
+
+    def orderbook_to_dict(self, orderbook, levels=5):
+        return {
+            "type":"orderbook",
+            "bid":[{"price":l.price, "volume": l.volume} for l in self.orderbook.bid_levels.get_levels()[:levels]],
+            "ask":[{"price":l.price, "volume": l.volume} for l in self.orderbook.ask_levels.get_levels()[:levels]],
+            "time":datetime.datetime.utcnow().strftime(self.time_fmt)}
+
+    def trade_to_dict(self, trade):
+        return {
+            "type": "trade",
+            "trader_id":trade.trader_id, 
+            "counterpart_id":trade.counterpart_id,
+            "trade_id":trade.trade_id,
+            "order_id":trade.order_id,
+            "side": "BUY" if trade.side == orderbook.BUY else "SELL",
+            "price": trade.price,
+            "volume":trade.volume,
+            "time":trade.time.strftime(self.time_fmt)}
+
+    def broadcast_sync_state(self, tid, recipients):
+        self.log.info("Syncing state for: {}".format(tid))
+        
+        reply = {
+            "type": "sync_state",
+            "trader_id": tid,
+            "orders": [self.order_to_dict(o) for o in self.orderbook.get_orders(tid)],
+            "orderbooks": self.orderbook_updates,
+            "orderbook": self.orderbook_to_dict(self.orderbook), 
+            "trades": [self.trade_to_dict(t) for t in self.trades[tid]] if tid in self.trades else [],
+            "hints": self.hints
+        }
+
+        json = ujson.dumps(reply)
+        self.broadcast_queue.put((json, recipients)) 
+
+    def broadcast_order(self, order, recipients):
+        self.log.info("Pushing order_ack: {}".format(str(order)))
+        json = ujson.dumps(self.order_to_dict(order))
+        self.broadcast_queue.put((json, recipients))
+
+    def broadcast_orderbook(self, recipients):
+        self.log.info("Pushing orderbook:\n {}".format(str(self.orderbook)))
+        json = ujson.dumps(self.orderbook_to_dict(self.orderbook))
+        self.orderbook_updates.append(self.orderbook_to_dict(self.orderbook, levels=1))
+        self.broadcast_queue.put((json, recipients))
+
+    def broadcast_trade(self, trade, recipients):
+        self.log.info("Pushing trade: {}".format(trade))
+        json = ujson.dumps(self.trade_to_dict(trade))
+        self.broadcast_queue.put((json, recipients))
+
     def broadcast_cancel(self, cancel, recipients):
         self.log.info("Pushing cancel_ack: {}".format(str(cancel)))
         dict = {
@@ -141,45 +203,11 @@ class Exchange:
         json = ujson.dumps(dict)
         self.broadcast_queue.put((json, recipients))
 
-    def broadcast_order(self, order, recipients):
-        self.log.info("Pushing order_ack: {}".format(str(order)))
-        dict = {
-            "type":"order_ack",
-            "trader_id": order.trader_id,
-            "order_id": order.order_id,
-            "side": "BUY" if order.side == orderbook.BUY else "SELL",
-            "price": order.price,
-            "volume": order.volume}
-
-        json = ujson.dumps(dict)
+    def broadcast_hints(self, recipients):
+        self.log.info("Pushing hints:\n {}".format(str(self.hints)))
+        json = ujson.dumps({"type": "hints", "hints": self.hints})
         self.broadcast_queue.put((json, recipients))
 
-    def broadcast_orderbook(self, recipients):
-        self.log.info("Pushing orderbook:\n {}".format(str(self.orderbook)))
-        dict = {
-            "type":"orderbook",
-            "bid":[{"price":l.price, "volume": l.volume} for l in self.orderbook.bid_levels.get_levels()],
-            "ask":[{"price":l.price, "volume": l.volume} for l in self.orderbook.ask_levels.get_levels()],
-            "time":datetime.datetime.utcnow().strftime(self.time_fmt)}
-
-        json = ujson.dumps(dict)
-        self.orderbook_updates.append(json)
-        self.broadcast_queue.put((json, recipients))
-
-    def broadcast_trade(self, trade, recipients):
-        self.log.info("Pushing trade: {}".format(trade))
-        json = ujson.dumps({
-            "type": "trade",
-            "trader_id":trade.trader_id, 
-            "counterpart_id":trade.counterpart_id,
-            "trade_id":trade.trade_id,
-            "order_id":trade.order_id,
-            "side": "BUY" if trade.side == orderbook.BUY else "SELL",
-            "price": trade.price,
-            "volume":trade.volume,
-            "time":trade.time.strftime(self.time_fmt)})
-
-        self.broadcast_queue.put((json, recipients))
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

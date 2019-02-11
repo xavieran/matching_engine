@@ -1,3 +1,5 @@
+import moment from 'moment'
+
 function uuidv4(){
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = (Math.random() * 16 | 0), v = c === 'x' ? r : ((r & 0x3) | 0x8);
@@ -17,8 +19,10 @@ class ExchangeInterface {
 
         this.pnl = {}
         this.orderbook = {}
+        this.orderbook_updates = []
         this.trades = []
         this.orders = []
+        this.hints = []
 
         this.websocket = null;
     }
@@ -62,6 +66,15 @@ class ExchangeInterface {
                     console.log("Got cancel", data)
                     this.handle_cancel_ack(data)
                     break;
+                case 'hints':
+                    console.log("Got hints", data)
+                    this.handle_hints(data)
+                    break;
+                case 'sync_state':
+                    console.log("Got sync_state", data)
+                    this.handle_sync_state(data)
+                    break;
+
                 default:
                     console.error("Unsupported event", data)
                     break;
@@ -78,6 +91,25 @@ class ExchangeInterface {
     handle_orderbook(data){
         this.orderbook = data
         this.orderbook.ask = this.orderbook.ask.reverse()
+        this.handle_orderbook_update(this.orderbook)
+    }
+
+    handle_orderbook_update(data){
+        let bid = null
+        let ask = null
+        let time = moment(data.time)
+
+        if (data.bid.length !== 0){
+            bid = data.bid[0].price
+        }
+
+        if (data.ask.length !== 0){
+            ask = data.ask[data.ask.length - 1].price
+        }
+        const tick = {time: time, bid: bid, ask: ask}
+        console.log("Updating orderbook history: ", tick)
+
+        this.orderbook_updates.push(tick)
     }
 
     handle_order_ack(data){
@@ -109,6 +141,33 @@ class ExchangeInterface {
             }
         }
         this.update_pnl()
+    }
+
+    handle_hints(data){
+        console.log("Handling hints")
+        this.hints = data.hints
+    }
+
+    handle_sync_state(data){
+        console.log("Syncing state")
+        this.handle_hints(data)
+
+        for (let i = 0; i < data.trades.length; i++)
+        {
+            this.handle_trade(data.trades[i])
+        }
+
+        for (let i = 0; i < data.orders.length; i++)
+        {
+            this.handle_order_ack(data.orders[i])
+        }
+
+        for (let i = 0; i < data.orderbooks.length; i++)
+        {
+            this.handle_orderbook_update(data.orderbooks[i])
+        }
+
+        this.handle_orderbook(data["orderbook"])
     }
 
     send(data){
@@ -148,6 +207,17 @@ class ExchangeInterface {
 
         console.log("Sending cancel", cancel);
         this.send(cancel)
+    }
+
+    send_hint(hint, trader_id){
+        let message = {
+            type:"hint",
+            hint: hint,
+			trader_id: trader_id
+        }
+
+        console.log("Sending hint", message);
+        this.send(message)
     }
 }
 

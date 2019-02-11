@@ -15,14 +15,27 @@ class Login extends React.Component {
             return (
                 <Form>
                   <Form.Group controlId="formLogin">
-                    <Form.Control size="lg" type="text" placeholder="Enter username" ref={(ref) => this.trader_id = ref}/>
-                    <Button size="lg" variant="primary" type="submit" onClick={() => this.props.login(this.trader_id.value)}>Login</Button>
+                      <Form.Control 
+                          size="lg" 
+                          type="text" 
+                          placeholder="Enter username" 
+                          ref={(ref) => this.trader_id = ref}/>
+                      <Button 
+                          size="lg" 
+                          variant="primary" 
+                          onClick={() => {
+                              if (this.trader_id.value){
+                                  this.props.login(this.trader_id.value)
+                              }
+                          }}>
+                          Login
+                      </Button>
                   </Form.Group>
                 </Form>
             )
         }
 
-        return <Redirect push to="/TraderInterface" />
+        return <Redirect push to={this.props.redirect} />
     }
 }
 
