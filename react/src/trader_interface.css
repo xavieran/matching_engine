@@ -28,16 +28,20 @@ table.orderbookTable table, th, td {
 
 .buyButton{
     background: #44ee44;
+    border-color: #44ff44;
     font-weight: bold;
 }
 
 .sellButton{
     background: #ee4444;
+    border-color: #ff4444;
     font-weight: bold;
 }
 
 .cancelButton{
-    background: #eeeeee;
+    background: #eeee44;
+    border-color: #ffff44;
+    border-radius: 40%;
     font-weight: bold;
 }
 

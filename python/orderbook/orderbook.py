@@ -230,14 +230,18 @@ class OrderBook:
                 trades = self.ask_levels.match(order)
             else:
                 self.bid_levels.insert(order)
+                return order
 
         if order.side == SELL:
             if self.bid_levels.prices and order.price <= self.bid_levels.get_levels()[0].price:
                 trades = self.bid_levels.match(order)
             else:
                 self.ask_levels.insert(order)
+                return order
 
         self.handle_trades(trades, order)
+
+        return True
 
     def cancel_order(self, order_id):
         if not self.bid_levels.cancel(order_id):

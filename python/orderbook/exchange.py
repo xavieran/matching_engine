@@ -20,11 +20,16 @@ class Exchange:
         self.orderbook = orderbook.OrderBook(self.trade_handler)
         self.orderbook_updates = []
         self.trades = {}
-        self.traders = set()
+        self.traders = {}
         self.log = logging.getLogger("exchange")
         self.time_fmt = "%Y%m%dT%H%M%S"
         self.broadcaster = broadcaster
         self.broadcast_queue = Queue()
+
+    def login_handler(self, message, user):
+        tid = message["trader_id"]
+        self.log.info("Registering {}".format(tid))
+        self.traders[tid] = user
 
     def trade_handler(self, trades, order):
         self.log.info("Handling trades: {} with order: {}".format(",".join(map(str,trades)), order))
@@ -49,7 +54,7 @@ class Exchange:
                 self.trades[tid] = []
             self.trades[tid].append(t)
 
-            self.broadcast_trade(t, ALL)
+            self.broadcast_trade(t, [self.traders[tid]])
 
     def handle_message(self, message, user):
         """
@@ -57,6 +62,7 @@ class Exchange:
         {"type":"cancel", "trader_id": "str", "order_id": "uuid"}
         {"type":"trade", "trade_id": "uuid", "trader_id": "str", "order_id": "uuid", "side": "BUY|SELL", "price": "int", "volume": "unsigned"}
         {"type":"order", "trader_id": "str", "order_id": "uuid", "side": "BUY|SELL", "price": "int", "volume": "unsigned"}
+        {"type":"login", "trader_id":"str"}
         {"type":"sync_state", "trader_id":"str"}
         {"type":"orderbook", "bid": [], "ask": []}
         """
@@ -64,27 +70,20 @@ class Exchange:
         try:
             decoded = ujson.loads(message)
             type = decoded["type"]
-
-            if type == "insert":
-                self.handle_insert_message(decoded, ALL)
-            if type == "cancel":
-                self.handle_cancel_message(decoded, ALL)
-            if type == "sync_state":
-                self.handle_sync_state(decoded, [user])
-            if type == "list_traders":
-                self.handle_list_traders(decoded, [user])
+            if type == "login":
+                self.login_handler(decoded, user)
+            else:
+                if not decoded["trader_id"] in self.traders:
+                    self.log.warn("Trader {} has not logged in".format(decoded["trader_id"]))
+                    return 
+                
+                if type == "insert":
+                    self.handle_insert_message(decoded)
+                elif type == "cancel":
+                    self.handle_cancel_message(decoded)
 
         except ValueError as e:
             self.log.warn("Failed to decode message: {}".format(e))
-
-    def handle_list_traders(self, msg, recipients):
-        self.log.info("Sending list of traders: {}".format(self.traders))
-        dict = {
-            "type":"trader_list",
-            "traders":self.traders
-        }
-
-        self.broadcast_queue.put((ujson.dumps(dict), recipients))
 
     def handle_sync_state(self, msg, recipients):
         tid = msg['trader_id']
@@ -102,7 +101,10 @@ class Exchange:
         for t in trades:
             self.broadcast_trade(t, recipients)
 
-    def handle_insert_message(self, msg, recipients):
+    def handle_insert_message(self, msg):
+        price = int(msg["price"])
+        volume = int(msg["volume"])
+
         order = orderbook.Order(
             msg['trader_id'],
             msg['order_id'],
@@ -112,21 +114,37 @@ class Exchange:
 
         self.log.info("Handling order: {}".format(str(order)))
 
-        self.orderbook.insert_order(order)
-        self.broadcast_orderbook(recipients)
+        traded = self.orderbook.insert_order(order)
+        if not traded == True:
+            tid = order.trader_id
+            self.broadcast_order(order, [self.traders[tid]])
 
-    def handle_cancel_message(self, msg, recipients):
+        self.broadcast_orderbook(ALL)
+
+    def handle_cancel_message(self, msg):
         order_id = msg["order_id"]
         trader_id = msg["trader_id"]
 
         self.log.info("Cancelling order_id: {} from {}".format(order_id, trader_id))
-        self.orderbook.cancel_order(order_id)
-        self.broadcast_orderbook(recipients)
+
+        if self.orderbook.cancel_order(order_id):
+            self.broadcast_cancel(msg, [self.traders[trader_id]])
+            self.broadcast_orderbook(ALL)
+
+    def broadcast_cancel(self, cancel, recipients):
+        self.log.info("Pushing cancel_ack: {}".format(str(cancel)))
+        dict = {
+            "type":"cancel_ack",
+            "trader_id": cancel["trader_id"],
+            "order_id": cancel["order_id"]}
+
+        json = ujson.dumps(dict)
+        self.broadcast_queue.put((json, recipients))
 
     def broadcast_order(self, order, recipients):
-        self.log.info("Pushing order:\n {}".format(str(order)))
+        self.log.info("Pushing order_ack: {}".format(str(order)))
         dict = {
-            "type":"order",
+            "type":"order_ack",
             "trader_id": order.trader_id,
             "order_id": order.order_id,
             "side": "BUY" if order.side == orderbook.BUY else "SELL",
@@ -181,12 +199,14 @@ if __name__ == "__main__":
                 await asyncio.wait([user.send(message) for user in recipients])
 
     async def register(websocket):
+        log.info("New websocket connection opened {}".format(str(websocket)))
         USERS[websocket] = websocket
 
     async def unregister(websocket):
+        log.info("Websocket connection closed {}".format(str(websocket)))
         del USERS[websocket]
 
-    async def process_order(websocket, path):
+    async def handle_message(websocket, path):
         await register(websocket)
         try:
             async for message in websocket:
@@ -196,8 +216,8 @@ if __name__ == "__main__":
             await unregister(websocket)
     
     port = 6789
-    print("Listening on: {}".format(port))
+    log.info("Listening on: {}".format(port))
     asyncio.get_event_loop().run_until_complete(
-        websockets.serve(process_order, '', port))
+        websockets.serve(handle_message, '', port))
     asyncio.get_event_loop().run_forever()
 

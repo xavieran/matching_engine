@@ -42,7 +42,7 @@ class ExchangeInterface {
             console.log("WebSocket error", event)
         }
         this.websocket.onmessage = (event) => {
-            console.log("WebSocket error")
+            console.log("WebSocket message", event)
             let data = JSON.parse(event.data)
 
             switch (data.type) {
@@ -76,7 +76,8 @@ class ExchangeInterface {
     }
 
     handle_orderbook(data){
-        this.orderbook = data;
+        this.orderbook = data
+        this.orderbook.ask = this.orderbook.ask.reverse()
     }
 
     handle_order_ack(data){
@@ -84,11 +85,29 @@ class ExchangeInterface {
     }
 
     handle_cancel_ack(data){
-        this.orders.push(data);
+        for (let i = 0; i < this.orders.length; i++){
+            if (this.orders[i].order_id === data.order_id)
+            {
+                console.log("Removing order: ", this.orders[i])
+                this.orders.splice(i, 1)
+                break
+            }
+        }
     }
 
     handle_trade(data){
         this.trades.unshift(data);
+        for (let i = 0; i < this.orders.length; i++){
+            if (this.orders[i].order_id === data.order_id)
+            {
+                this.orders[i].volume -= data.volume
+                if (this.orders[i].volume <= 0){
+                    console.log("Removing order: ", this.orders[i])
+                    this.orders.splice(i, 1)
+                }
+                break
+            }
+        }
         this.update_pnl()
     }
 
@@ -110,13 +129,13 @@ class ExchangeInterface {
         this.send(order);
     }
 
-    send_trader(trader_id){
+    send_login(trader_id){
         let message = {
-            type: "sync_state",
+            type: "login",
             trader_id: trader_id
         }
 
-        console.log("Sending trader_id", trader_id);
+        console.log("Logging in with: ", trader_id);
         this.send(message);
     }
 

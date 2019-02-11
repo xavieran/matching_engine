@@ -1,36 +1,28 @@
-import React from 'react';
-import { Redirect } from 'react-router';
 import './login_page.css';
 
+import Form from 'react-bootstrap/Form'
+import Button from 'react-bootstrap/Button'
+
+import { Redirect } from 'react-router';
+
+import React from 'react';
+
+
 class Login extends React.Component {
-    constructor(props)
-    {
-        super(props)
-        this.state = {
-            redirect: false
-        }
-    }
-
     render() {
-        if (this.state.redirect) {
-            return <Redirect push to="/TraderInterface" />
+        console.log("id", this.props.trader_id)
+        if (this.props.trader_id == null) {
+            return (
+                <Form>
+                  <Form.Group controlId="formLogin">
+                    <Form.Control size="lg" type="text" placeholder="Enter username" ref={(ref) => this.trader_id = ref}/>
+                    <Button size="lg" variant="primary" type="submit" onClick={() => this.props.login(this.trader_id.value)}>Login</Button>
+                  </Form.Group>
+                </Form>
+            )
         }
 
-        return (
-                <div className="login-page">
-                    <b>Username</b>
-                    <input type="text"></input>
-                    <b>Password</b>
-                    <input type="text"></input>
-                    <button className="login-button" onClick={() => this.handleOnClick()}>Login</button>
-                </div>
-               );
-    }
-
-    handleOnClick()
-    {
-        console.log("Logging in redirecting")
-        this.setState({redirect: true})
+        return <Redirect push to="/TraderInterface" />
     }
 }
 
