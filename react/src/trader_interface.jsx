@@ -3,6 +3,7 @@ import OrderbookGraph from './orderbook_graph.jsx';
 
 import NumericInput from 'react-numeric-input'
 
+import Alert from 'react-bootstrap/Alert'
 import Table from 'react-bootstrap/Table'
 
 import React from 'react'
@@ -170,6 +171,9 @@ class TraderInterface extends React.Component {
     render() {
         return (
             <div className="traderInterface">
+              <Alert variant="info">
+                  {this.props.hints.map((hint) => <><p>{hint}</p><hr /></>)}
+              </Alert>
               <OrderbookGraph 
 			    ask={[1,2,3,7,6,20,15,5]}
 				bid={[1,2,3,7,6,20,15,5]}
@@ -204,7 +208,7 @@ class MonitorInterface extends React.Component {
 			    ask={[1,2,3,7,6,20,15,5]}
 				bid={[1,2,3,7,6,20,15,5]}
 				trade={[]}
-		      />
+              />
               <div className="traderInputs">
                 <div className="tradeInputAndOrderbook">
                   <Orderbook 

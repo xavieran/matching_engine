@@ -27,7 +27,10 @@ class Root extends React.Component {
             },
             orders: [],
             trades: [],
-            pnl: {}
+            pnl: {},
+            hints: [
+                "Depth of all the world's oceans in meters",
+                "There are 7 oceans"]
         }
     }
 
@@ -97,11 +100,12 @@ class Root extends React.Component {
                   </Navbar.Brand>
                   <Nav fill variant="pill">
                   <Nav.Item>
-                    <Nav.Link href="/login">Login</Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
                     <Nav.Link href="/monitor">Monitor</Nav.Link>
                   </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link href="/admin">Admin</Nav.Link>
+                  </Nav.Item>
+
                   </Nav>
                 </Navbar>
                 <Route exact path="/" render={props => <Redirect push to="/login"/>}/>
@@ -119,10 +123,16 @@ class Root extends React.Component {
                         cancel={this.send_cancel.bind(this)}
                         orderbook={this.state.orderbook}
                         orders={this.state.orders}
-                        trades={this.state.trades}/>
+                        trades={this.state.trades}
+                        hints={this.state.hints}/>
                   }}}
                 />
                 <Route exact path="/monitor" render={props => {
+                  return <MonitorInterface
+                    orderbook={this.state.orderbook}
+                    trades={this.state.trades}/>}}
+                />
+                <Route exact path="/admin" render={props => {
                   return <MonitorInterface
                     orderbook={this.state.orderbook}
                     trades={this.state.trades}/>}}
