@@ -4,38 +4,47 @@ table.orderbookTable, th, td {
     padding: 5px;
 }
 
-.tradeInput{
-    display: flex;
-    flex-direction: column;
-    width: 50%
+.tableRowBuy{
+    background-color: lightgreen;
+    padding: 0px;
 }
 
-.quoteInput{
-    border-style: solid;
-    border-width: 1px;
-    align-items: center;
-    display: flex;
-    flex-direction: row;
-    border-radius: 5px;
-    padding-left: 2px;
+.table-row-sell{
+    background-color: salmon;
 }
 
-.tradeInputButtons{
-    display: flex;
-    flex-direction: row;
-    flex-grow: 1;
+.table td {
+    padding: 5px;
 }
 
 .buyButton{
     background: #44ee44;
     border-color: #44ff44;
     font-weight: bold;
+    margin: 5px;
+    margin-right: 10px;
+}
+
+.priceInput{
+    font-weight: bold;
+    margin: 2px;
+}
+
+.volumeInput{
+    font-weight: bold;
+    margin: 2px;
 }
 
 .sellButton{
     background: #ee4444;
     border-color: #ff4444;
     font-weight: bold;
+    margin: 5px;
+    margin-right: 10px;
+}
+
+.hitButton{
+    color: rgba(1,1,1,.5)
 }
 
 .cancelButton{
@@ -64,6 +73,20 @@ table.orderbookTable, th, td {
     font-weight: bold;
 }
 
+.quoteInput{
+    border-width: 1px;
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    padding: 2px;
+}
+
+.smallMargins{
+    padding: 1px;
+    margin: 1px;
+}
+
+/*
 .tradeInputAndOrderbook{
     display: flex;
     flex-direction: column;
@@ -93,3 +116,15 @@ table.orderbookTable, th, td {
     flex-direction: column;
     flex-grow: 1;
 }
+
+.tradeInput{
+    display: flex;
+    flex-direction: column;
+    width: 50%
+}
+.tradeInputButtons{
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+}
+*/

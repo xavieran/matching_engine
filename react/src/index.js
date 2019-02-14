@@ -3,12 +3,12 @@ import {TraderInterface, MonitorInterface} from './trader_interface.jsx';
 import Login from './login_page.js';
 import './index.css';
 
-import Alert from 'react-bootstrap/Alert'
-import Nav from 'react-bootstrap/Nav'
-import Navbar from 'react-bootstrap/Navbar'
+import {Menu, Icon} from 'semantic-ui-react'
+import {Popup} from 'semantic-ui-react'
+import {Divider} from 'semantic-ui-react'
 
 import { Redirect } from 'react-router';
-import { Route, BrowserRouter as Router } from 'react-router-dom'
+import { Link, Route, BrowserRouter as Router } from 'react-router-dom'
 
 import React from 'react';
 import ReactDOM from 'react-dom';
@@ -101,22 +101,15 @@ class Root extends React.Component {
         return (
             <Router>
               <div>
-                <Navbar bg="light">
-                  <Navbar.Brand>
-                    <Alert variant={this.state.connected ? "success" : "danger" }>
-                      {this.state.connected ? "Connected" : "Not connected"}
-                    </Alert>
-                  </Navbar.Brand>
-                  <Nav fill variant="pill">
-                  <Nav.Item>
-                    <Nav.Link href="/monitor">Monitor</Nav.Link>
-                  </Nav.Item>
-                  <Nav.Item>
-                    <Nav.Link href="/admin">Admin</Nav.Link>
-                  </Nav.Item>
-
-                  </Nav>
-                </Navbar>
+                <Menu stackable>
+                  <Menu.Item name={this.state.trader_id ? "Logout" : "Login"} href="/login"><Icon name="user" color="blue" size="large"/></Menu.Item>
+                  <Menu.Item name="Monitor" as={Link} to="/monitor"><Icon name="chart line" color="blue" size="large"/></Menu.Item>
+                  <Menu.Item name="Admin" as={Link} to="/admin"><Icon name="spy" color="black" size="large"/></Menu.Item>
+                  <Menu.Item name="Connected" position="right">
+                    {this.state.trader_id ? <b>{"Trader:" + this.state.trader_id + " "}</b> : null}
+                    <Popup trigger={<Icon name="exchange" color={this.state.connected ? "green" : "red"} size="large"/>} content={this.state.connected ? "Connected to exchange" : "Not connected!"}/>
+                  </Menu.Item>
+                </Menu>
                 <Route exact path="/" render={props => <Redirect push to="/login"/>}/>
                 <Route exact path="/login" render={props => 
                   <Login 
@@ -130,6 +123,7 @@ class Root extends React.Component {
                   } else {
                       return <TraderInterface
                         trade={this.send_order.bind(this)}
+                        trader_id={this.state.trader_id}
                         cancel={this.send_cancel.bind(this)}
                         orderbook={this.state.orderbook}
 						orderbook_updates={this.state.orderbook_updates}

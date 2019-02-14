@@ -48,15 +48,14 @@ class OrderbookGraph extends React.Component {
             },
             zoom: {
                 enabled: true, 
-                mode: 'xy',
+                mode: 'x',
                 sensitivity: 0.25,
-                drag: true,
             }
 		}
 
  		console.log(data)
 		return (<div className="orderbookGraph">
-			<Line width={200} height={200} data={data} options={options}
+			<Line height={300} data={data} options={options}
             />
             </div>
 		)

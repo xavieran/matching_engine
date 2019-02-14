@@ -1,8 +1,7 @@
-body {
-  font: 14px "Century Gothic", Futura, sans-serif;
-  margin: 20px;
-}
-
-ol, ul {
-  padding-left: 30px;
+.justify-content-right{
+    align-self: flex-end !important; 
+    margin-left: auto !important;
+    display: block !important;
+    width: 100% !important;
+    padding: 1px;
 }
