@@ -37,7 +37,7 @@ class Root extends React.Component {
     }
 
     componentDidMount() {
-        console.log("Mounted")
+        //console.log("Mounted")
         this.exchange_interface = new ExchangeInterface(
             this.onopen.bind(this),
             this.onclose.bind(this),
@@ -51,7 +51,7 @@ class Root extends React.Component {
     }
 
     exchange_event(){
-        console.log("Updating state", this.exchange_interface)
+        //console.log("Updating state", this.exchange_interface)
         this.setState({
             exchange_host: this.exchange_host,
             status: this.exchange_interface.status,
@@ -66,18 +66,18 @@ class Root extends React.Component {
     }
 
     onopen(event){
-        console.log("Received onopen", event);
+        //console.log("Received onopen", event);
         this.setState({connected: true})
         this.exchange_interface.send_login("")
     }
 
     onclose(event){
-        console.log("Received onclose", event);
+        //console.log("Received onclose", event);
         this.setState({connected: false})
     }
 
     connect(){
-        console.log("About to connect");
+        //console.log("About to connect");
         this.exchange_interface.connect()
     }
 
@@ -95,7 +95,7 @@ class Root extends React.Component {
 
     login(trader_id)
     {
-        console.log("Logging in as: ", trader_id)
+        //console.log("Logging in as: ", trader_id)
         this.exchange_interface.send_login(trader_id)
         this.setState({trader_id: trader_id})
     }

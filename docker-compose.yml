@@ -17,5 +17,8 @@ services:
         ports:
             - "8000:8000"
             - "3000:3000"
+        environment:
+            #debug and prod
+            - MODE=prod
         volumes:
             - ./react:/html

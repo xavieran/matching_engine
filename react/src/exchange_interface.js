@@ -36,55 +36,55 @@ class ExchangeInterface {
     }
 
     connect(host){
-        console.log("Opening connection to", host)
+        //console.log("Opening connection to", host)
         this.websocket = new WebSocket(host)
         this.websocket.onopen = (event) => {
-            console.log("WebSocket onopen")
+            //console.log("WebSocket onopen")
             this.onopen(event)
         }
         this.websocket.onclose = (event) => {
-            console.log("WebSocket onclose")
+            //console.log("WebSocket onclose")
             this.onclose(event)
         }
         this.websocket.onerror = (event) => {
-            console.log("WebSocket error", event)
+            //console.log("WebSocket error", event)
         }
         this.websocket.onmessage = (event) => {
-            console.log("WebSocket message", event)
+            //console.log("WebSocket message", event)
             let data = JSON.parse(event.data)
 
             switch (data.type) {
                 case 'orderbook':
-                    console.log("Got orderbook", data)
+                    //console.log("Got orderbook", data)
                     this.handle_orderbook(data)
                     break
                 case 'trade':
-                    console.log("Got trade", data)
+                    //console.log("Got trade", data)
                     this.handle_trade(data)
                     break
                 case 'order_ack':
-                    console.log("Got order", data)
+                    //console.log("Got order", data)
                     this.handle_order_ack(data)
                     break
                 case 'cancel_ack':
-                    console.log("Got cancel", data)
+                    //console.log("Got cancel", data)
                     this.handle_cancel_ack(data)
                     break
                 case 'hints':
-                    console.log("Got hints", data)
+                    //console.log("Got hints", data)
                     this.handle_hints(data)
                     break
                 case 'sync_state':
-                    console.log("Got sync_state", data)
+                    //console.log("Got sync_state", data)
                     this.handle_sync_state(data)
                     break
                 case 'status':
-                    console.log("Got exchange status", data)
+                    //console.log("Got exchange status", data)
                     this.handle_status(data)
                     break
 
                 default:
-                    console.error("Unsupported event", data)
+                    //console.error("Unsupported event", data)
                     break
             }
             this.update_pnl()
@@ -93,7 +93,7 @@ class ExchangeInterface {
     }
 
     update_pnl(){
-        console.log("START UPDATE", new Date())
+        //console.log("START UPDATE", new Date())
         if (this.trader_id == ""){
             for (const [trader_id, trades ] of Object.entries(this.trades)){
                 this.pnls[trader_id] = calculate_pnl(this.midprice, trades)
@@ -101,7 +101,7 @@ class ExchangeInterface {
         } else {
             this.pnls[this.trader_id] = calculate_pnl(this.midprice, this.trades[this.trader_id])
         }
-        console.log("END UPDATE", new Date())
+        //console.log("END UPDATE", new Date())
     }
 
     handle_status(data){
@@ -143,7 +143,7 @@ class ExchangeInterface {
         for (let i = 0; i < this.orders.length; i++){
             if (this.orders[i].order_id === data.order_id)
             {
-                console.log("Removing order: ", this.orders[i])
+                //console.log("Removing order: ", this.orders[i])
                 this.orders.splice(i, 1)
                 break
             }
@@ -165,7 +165,7 @@ class ExchangeInterface {
                 {
                     this.orders[i].volume -= data.volume
                     if (this.orders[i].volume <= 0){
-                        console.log("Removing order: ", this.orders[i])
+                        //console.log("Removing order: ", this.orders[i])
                         this.orders.splice(i, 1)
                     }
                     break
@@ -175,12 +175,12 @@ class ExchangeInterface {
     }
 
     handle_hints(data){
-        console.log("Handling hints")
+        //console.log("Handling hints")
         this.hints = data.hints
     }
 
     handle_sync_state(data){
-        console.log("Syncing state")
+        //console.log("Syncing state")
         this.pnls = {}
         this.orderbook = {}
         this.orderbook_updates = []
@@ -227,7 +227,7 @@ class ExchangeInterface {
             volume: volume
         }
 
-        console.log("Sending order", order)
+        //console.log("Sending order", order)
         this.send(order)
     }
 
@@ -237,7 +237,7 @@ class ExchangeInterface {
             trader_id: trader_id
         }
         
-        console.log("Logging in with: ", trader_id)
+        //console.log("Logging in with: ", trader_id)
         this.send(message)
     }
 
@@ -248,7 +248,7 @@ class ExchangeInterface {
             order_id: order_id
         }
 
-        console.log("Sending cancel", cancel)
+        //console.log("Sending cancel", cancel)
         this.send(cancel)
     }
 
@@ -259,7 +259,7 @@ class ExchangeInterface {
 			trader_id: trader_id
         }
 
-        console.log("Sending hint", message)
+        //console.log("Sending hint", message)
         this.send(message)
     }
 }

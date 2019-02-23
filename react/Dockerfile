@@ -15,8 +15,12 @@ RUN npm install -g \
     bootstrap \
     react-chartjs-2 \
     chart.js \
+    serve \
     --save
 
+
+COPY . /fixed
+RUN cd /fixed && npm run build 
 
 COPY entrypoint.sh /
 

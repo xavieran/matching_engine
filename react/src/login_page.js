@@ -7,7 +7,6 @@ import { Redirect } from 'react-router';
 import React from 'react';
 
 
-//ref={(ref) => this.trader_id = ref}/>
 class Login extends React.Component {
     constructor(props){
         super(props)
@@ -17,7 +16,6 @@ class Login extends React.Component {
     }
 
     render() {
-        //console.log("id", this.props.trader_id)
         if (this.props.trader_id == null) {
             return (
                 <Grid textAlign='center' style={{height: '100%'}} verticalAlign='middle'>
@@ -51,5 +49,6 @@ class Login extends React.Component {
         return <Redirect push to={this.props.redirect} />
     }
 }
+
 
 export default Login
