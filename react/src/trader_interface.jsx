@@ -192,7 +192,8 @@ class TradeList extends React.Component {
         let trades = this.props.trades
         let button = <div><Icon name="minus"/></div>
         if (!this.state.show_all){
-            trades = trades.slice(0, 10)
+            if (trades)
+                trades = trades.slice(0, 10)
             button = <div><Icon name="plus"/></div>
         }
 

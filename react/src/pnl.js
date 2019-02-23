@@ -5,26 +5,30 @@ function calculate_pnl(price, trades){
     let tot_sell = 0
     let tot_buy_val = 0
     let tot_sell_val = 0
+    let avg_buy_px = null
+    let avg_sell_px = null
 
-    for (let i = 0; i < trades.length; i += 1){
-        const sign = trades[i].side === 'BUY' ? 1 : -1
-        const vol = trades[i].volume * sign
-        const px = trades[i].price
-        const val = vol * px
-        net_pos += vol
+    if (trades){
+        for (let i = 0; i < trades.length; i += 1){
+            const sign = trades[i].side === 'BUY' ? 1 : -1
+            const vol = trades[i].volume * sign
+            const px = trades[i].price
+            const val = vol * px
+            net_pos += vol
 
-        if (sign > 0){
-            tot_buy += vol
-            tot_buy_val += val
-        } else {
-            tot_sell += vol
-            tot_sell_val += val
+            if (sign > 0){
+                tot_buy += vol
+                tot_buy_val += val
+            } else {
+                tot_sell += vol
+                tot_sell_val += val
+            }
+
         }
-
     }
 
-    const avg_buy_px = tot_buy_val / tot_buy
-    const avg_sell_px = tot_sell_val / tot_sell
+    avg_buy_px = tot_buy_val / tot_buy
+    avg_sell_px = tot_sell_val / tot_sell
     const abs_tot_sell = -tot_sell
 
     if (tot_buy === 0 && abs_tot_sell !== 0){
