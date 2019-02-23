@@ -1,3 +1,12 @@
+.volume {
+    height: 100%;
+    width: 100%;
+    overflow: auto;
+    padding: 0px;
+    margin: 0px;
+    border: 0px;
+}
+
 .volume-flash {
     animation: volume-flash-keyframes .15s ease-out;
 }
@@ -5,10 +14,12 @@
 @keyframes volume-flash-keyframes {
     0%,
     to {
-        background: red 
+        background: red;
+        border-radius: 70%;
     }
     100% {
-        background: white
+        background: white;
+        border-radius: 0%;
     }
 }
 
@@ -18,8 +29,16 @@ table.orderbookTable, th, td {
     padding: 5px;
 }
 
+td.orderbookTable {
+    height: 100%;
+    width: 100%;
+    padding: 0px;
+    margin: 0px;
+    text-align: center;
+}
+
 .orderbook{
-    font-size: 1.2em;
+    font-size: 1.3em;
 }
 
 .tableRowBuy{

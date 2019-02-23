@@ -226,7 +226,7 @@ class VolumeLevel extends React.Component {
             baseClassName="volume"
             animationClassName="volume-flash"
             animate={this.props.diff !== 0}>
-            {this.props.volume}</AnimateOnChange>
+              {this.props.volume}</AnimateOnChange>
     }
 }
 
@@ -261,7 +261,7 @@ class AskLevel extends React.Component {
                       : <div></div>}
               </td>
               <td className="bold">${level.price}</td>
-              <td><OrderbookLevel orderbook={this.props.orderbook} side={side} level={this.props.level}/></td>
+              <td className="orderbookTable"><OrderbookLevel orderbook={this.props.orderbook} side={side} level={this.props.level}/></td>
             </tr>
     }
 }
@@ -273,7 +273,7 @@ class BidLevel extends React.Component {
         if (!level) return null
 
         return <tr>
-              <td><OrderbookLevel orderbook={this.props.orderbook} side={side} level={this.props.level}/></td>
+              <td className="orderbookTable"><OrderbookLevel orderbook={this.props.orderbook} side={side} level={this.props.level}/></td>
               <td className="bold">${level.price}</td>
               <td>
               {this.props.tradable ? 
@@ -307,7 +307,6 @@ class Orderbook extends React.Component {
                   <BidLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={2}/>
                   <BidLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={3}/>
                   <BidLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={4}/>
-
                 </tbody>
               </table>
             </div>
