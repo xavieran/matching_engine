@@ -1,7 +1,25 @@
+.volume-flash {
+    animation: volume-flash-keyframes .15s ease-out;
+}
+
+@keyframes volume-flash-keyframes {
+    0%,
+    to {
+        background: red 
+    }
+    100% {
+        background: white
+    }
+}
+
 table.orderbookTable, th, td {
     border: 1px solid grey;
     border-collapse: collapse;
     padding: 5px;
+}
+
+.orderbook{
+    font-size: 1.2em;
 }
 
 .tableRowBuy{
@@ -48,10 +66,6 @@ table.orderbookTable, th, td {
 }
 
 .cancelButton{
-    background: #eeee44;
-    border-color: #ffff44;
-    border-radius: 40%;
-    font-weight: bold;
 }
 
 .priceHeader {

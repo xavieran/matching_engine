@@ -1,8 +1,7 @@
-import { Chart, Line } from 'react-chartjs-2'
+import { Line } from 'react-chartjs-2'
 
 import * as zoom from 'chartjs-plugin-zoom'
 
-import moment from 'moment'
 import React from 'react'
 
 class OrderbookGraph extends React.Component {
@@ -53,7 +52,6 @@ class OrderbookGraph extends React.Component {
             }
 		}
 
- 		console.log(data)
 		return (<div className="orderbookGraph">
 			<Line height={300} data={data} options={options}
             />

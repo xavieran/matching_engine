@@ -1,10 +1,11 @@
+import calculate_pnl from './pnl.js'
 import moment from 'moment'
 
 function uuidv4(){
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = (Math.random() * 16 | 0), v = c === 'x' ? r : ((r & 0x3) | 0x8);
-		return v.toString(16);
-	  });
+        var r = (Math.random() * 16 | 0), v = c === 'x' ? r : ((r & 0x3) | 0x8)
+		return v.toString(16)
+	  })
 }
 
 class ExchangeInterface {
@@ -13,22 +14,25 @@ class ExchangeInterface {
         onclose,
         notify
     ){
-        this.onopen = onopen;
-        this.onclose = onclose;
+        this.onopen = onopen
+        this.onclose = onclose
         this.notify = notify
-
-        this.pnl = {}
+        this.trader_id = ""
+        this.pnls = {}
         this.orderbook = {}
         this.orderbook_updates = []
-        this.trades = []
+        this.trades = {}
+        this.all_trades = []
         this.orders = []
         this.hints = []
+        this.midprice = 0
+        this.status = 'closed'
 
-        this.websocket = null;
+        this.websocket = null
     }
 
     render(){
-        return null;
+        return null
     }
 
     connect(host){
@@ -53,39 +57,55 @@ class ExchangeInterface {
                 case 'orderbook':
                     console.log("Got orderbook", data)
                     this.handle_orderbook(data)
-                    break;
+                    break
                 case 'trade':
                     console.log("Got trade", data)
                     this.handle_trade(data)
-                    break;
+                    break
                 case 'order_ack':
                     console.log("Got order", data)
                     this.handle_order_ack(data)
-                    break;
+                    break
                 case 'cancel_ack':
                     console.log("Got cancel", data)
                     this.handle_cancel_ack(data)
-                    break;
+                    break
                 case 'hints':
                     console.log("Got hints", data)
                     this.handle_hints(data)
-                    break;
+                    break
                 case 'sync_state':
                     console.log("Got sync_state", data)
                     this.handle_sync_state(data)
-                    break;
+                    break
+                case 'status':
+                    console.log("Got exchange status", data)
+                    this.handle_status(data)
+                    break
 
                 default:
                     console.error("Unsupported event", data)
-                    break;
+                    break
             }
-
-            this.notify();
+            this.update_pnl()
+            this.notify()
         }
     }
 
     update_pnl(){
+        console.log("START UPDATE", new Date())
+        if (this.trader_id == ""){
+            for (const [trader_id, trades ] of Object.entries(this.trades)){
+                this.pnls[trader_id] = calculate_pnl(this.midprice, trades)
+            }
+        } else {
+            this.pnls[this.trader_id] = calculate_pnl(this.midprice, this.trades[this.trader_id])
+        }
+        console.log("END UPDATE", new Date())
+    }
 
+    handle_status(data){
+        this.status = data.status
     }
 
     handle_orderbook(data){
@@ -107,13 +127,16 @@ class ExchangeInterface {
             ask = data.ask[data.ask.length - 1].price
         }
         const tick = {time: time, bid: bid, ask: ask}
-        console.log("Updating orderbook history: ", tick)
+
+        const midprice = (ask + bid) * .5
+        if (midprice !== this.midprice)
+            this.midprice = midprice
 
         this.orderbook_updates.push(tick)
     }
 
     handle_order_ack(data){
-        this.orders.push(data);
+        this.orders.push(data)
     }
 
     handle_cancel_ack(data){
@@ -128,19 +151,27 @@ class ExchangeInterface {
     }
 
     handle_trade(data){
-        this.trades.unshift(data);
-        for (let i = 0; i < this.orders.length; i++){
-            if (this.orders[i].order_id === data.order_id)
-            {
-                this.orders[i].volume -= data.volume
-                if (this.orders[i].volume <= 0){
-                    console.log("Removing order: ", this.orders[i])
-                    this.orders.splice(i, 1)
+        this.all_trades.unshift(data)
+
+        if (this.trades[data.trader_id]){
+            this.trades[data.trader_id].unshift(data)
+        } else {
+            this.trades[data.trader_id] = [data]
+        }
+
+        if (data.trader_id === this.trader_id){
+            for (let i = 0; i < this.orders.length; i++){
+                if (this.orders[i].order_id === data.order_id)
+                {
+                    this.orders[i].volume -= data.volume
+                    if (this.orders[i].volume <= 0){
+                        console.log("Removing order: ", this.orders[i])
+                        this.orders.splice(i, 1)
+                    }
+                    break
                 }
-                break
             }
         }
-        this.update_pnl()
     }
 
     handle_hints(data){
@@ -150,7 +181,19 @@ class ExchangeInterface {
 
     handle_sync_state(data){
         console.log("Syncing state")
+        this.pnls = {}
+        this.orderbook = {}
+        this.orderbook_updates = []
+        this.trades = {}
+        this.all_trades = []
+        this.orders = []
+ 
         this.handle_hints(data)
+        this.trader_id = data.trader_id
+
+        if (!this.trades[data.trader_id] && !data.trader_id === ""){
+            this.trades[data.trader_id] = []
+        }
 
         for (let i = 0; i < data.trades.length; i++)
         {
@@ -171,7 +214,7 @@ class ExchangeInterface {
     }
 
     send(data){
-        this.websocket.send(JSON.stringify(data));
+        this.websocket.send(JSON.stringify(data))
     }
 
     send_order(side, price, volume, trader_id){
@@ -184,8 +227,8 @@ class ExchangeInterface {
             volume: volume
         }
 
-        console.log("Sending order", order);
-        this.send(order);
+        console.log("Sending order", order)
+        this.send(order)
     }
 
     send_login(trader_id){
@@ -193,9 +236,9 @@ class ExchangeInterface {
             type: "login",
             trader_id: trader_id
         }
-
-        console.log("Logging in with: ", trader_id);
-        this.send(message);
+        
+        console.log("Logging in with: ", trader_id)
+        this.send(message)
     }
 
     send_cancel(order_id, trader_id){
@@ -205,7 +248,7 @@ class ExchangeInterface {
             order_id: order_id
         }
 
-        console.log("Sending cancel", cancel);
+        console.log("Sending cancel", cancel)
         this.send(cancel)
     }
 
@@ -216,7 +259,7 @@ class ExchangeInterface {
 			trader_id: trader_id
         }
 
-        console.log("Sending hint", message);
+        console.log("Sending hint", message)
         this.send(message)
     }
 }

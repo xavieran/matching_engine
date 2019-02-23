@@ -20,7 +20,7 @@ class Exchange:
         self.orderbook = orderbook.OrderBook(self.trade_handler)
         self.orderbook_updates = []
         self.hints = []
-        self.trades = {}
+        self.trades = []
         self.traders = {}
         self.log = logging.getLogger("exchange")
         self.time_fmt = "%Y%m%dT%H%M%S"
@@ -45,12 +45,9 @@ class Exchange:
         trades.extend(opposing_trades)
 
         for t in trades:
-            tid = t.trader_id
-            if not tid in self.trades:
-                self.trades[tid] = []
-            self.trades[tid].append(t)
-
-            self.broadcast_trade(t, [self.traders[tid]])
+            self.trades.append(t)
+            self.broadcast_trade(t, ALL)
+           # [self.traders[tid]])
 
     def handle_message(self, message, user):
         """
@@ -170,7 +167,7 @@ class Exchange:
             "orders": [self.order_to_dict(o) for o in self.orderbook.get_orders(tid)],
             "orderbooks": self.orderbook_updates,
             "orderbook": self.orderbook_to_dict(self.orderbook), 
-            "trades": [self.trade_to_dict(t) for t in self.trades[tid]] if tid in self.trades else [],
+            "trades": [self.trade_to_dict(t) for t in self.trades],
             "hints": self.hints
         }
 

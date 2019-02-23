@@ -4,6 +4,7 @@ import '../node_modules/react-bootstrap-table/dist/react-bootstrap-table-all.min
 
 import OrderbookGraph from './orderbook_graph.jsx'
 
+import AnimateOnChange from 'react-animate-on-change'
 import NumericInput from 'react-numeric-input'
 
 import {Accordion, Icon} from 'semantic-ui-react'
@@ -12,10 +13,7 @@ import {Label} from 'semantic-ui-react'
 import {Segment} from 'semantic-ui-react'
 import {Slider} from 'react-semantic-ui-range'
 
-import Alert from 'react-bootstrap/Alert'
 import Button from 'react-bootstrap/Button'
-import Card from 'react-bootstrap/Card'
-import Collapse from 'react-bootstrap/Collapse'
 import Container from 'react-bootstrap/Container'
 import Form from 'react-bootstrap/Form'
 import Row from 'react-bootstrap/Row'
@@ -67,9 +65,9 @@ class QuoteInput extends React.Component {
                 onChange={(valueAsNumber, s, i) => this.setState({price: valueAsNumber})} />
             </div>
         )
-        //format={(num) => "$" + num} 
     }
 }
+
 
 class HitLimitInput extends React.Component {
     render() {
@@ -86,10 +84,11 @@ class HitLimitInput extends React.Component {
                 size={6}
                 mobile={true}
                 onChange={(valueAsNumber, s, i) => this.props.onChange(valueAsNumber)} />
-        </div>
+            </div>
         )
     }
 }
+
 
 class TradeInput extends React.Component {
     render() {
@@ -105,135 +104,189 @@ class TradeInput extends React.Component {
     }
 }
 
-    /*
+
+class PnLRow extends React.Component {
+    render() {
+        const pnl = this.props.pnl
+        if (!pnl){
+            return <div />
+        }
+
+        const x = new Intl.NumberFormat('en-US', {style: 'currency', currencyDisplay: 'symbol', currency: 'USD'}).format
+        return <tr>
+                 <td><b>{this.props.trader_id}</b></td><td><b>{x(pnl.pnl)}</b></td><td><b>{x(pnl.price)}</b></td>
+                 <td><b>{pnl.net_pos}</b></td><td><b>{x(pnl.avg_buy_px)}</b></td>
+                 <td><b>{pnl.tot_buy}</b></td><td><b>{x(pnl.avg_sell_px)}</b></td><td><b>{pnl.tot_sell}</b></td>
+               </tr>
+    }
+}
+
+
+class PnlDisplay extends React.Component {
+    render() {
+        let pnls = null
+        if (this.props.pnls){
+            pnls = Object.entries(this.props.pnls).map((e) => <PnLRow key={e[0]} trader_id={e[0]} pnl={e[1]}/>)
+        }
+
+        return (
+            <div className="pnlDisplay">
+              <Table bordered>
+                <thead>
+                  <tr>
+                    <td><b>Trader</b></td><td><b>PnL</b></td><td><b>Market</b></td>
+                    <td><b>Net Pos</b></td><td><b>Avg Buy</b></td>
+                    <td><b>Tot Buy</b></td><td><b>Avg Sell</b></td><td><b>Tot Sell</b></td>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pnls}
+                </tbody>
+              </Table>
+            </div>
+        )
+    }
+}
+
+
 class OrderList extends React.Component {
     render() {
         const orders = this.props.orders.sort((a, b) => a.price < b.price).map(
             (order) => 
                 <tr key={order.order_id}>
-                  <td>{order.side}</td><td>{order.price}</td><td>{order.volume}</td>
-                  <td><button className="cancelButton" onClick={() => this.props.cancel(order.order_id)}>X</button></td>
+                    <td><button className="cancelButton" onClick={() => this.props.cancel(order.order_id)}><Icon name="close" color="red"/></button></td>
+                  <td>{order.side}</td><td>${order.price}</td><td>{order.volume}</td>
                 </tr>
             )
 
         return (
             <div className="orderList">
-              <Card className="smallMargins">
-                <Card.Body>
-                  <Card.Title>Active Orders</Card.Title>
-                  <Table bordered striped hover >
-                    <thead>
-                      <tr><td><b>Side</b></td><td><b>Price</b></td><td><b>Volume</b></td><td></td></tr>
-                    </thead>
-                    <tbody>
-                      {orders}
-                    </tbody>
-                  </Table>
-                </Card.Body>
-              </Card>
+              <Header as='h3'>Active Orders</Header>
+              <Table bordered striped hover >
+                <thead>
+                  <tr><td><b></b></td><td><b>Side</b></td><td><b>Price</b></td><td><b>Volume</b></td></tr>
+                </thead>
+                <tbody>
+                  {orders}
+                </tbody>
+              </Table>
             </div>
         )
     }
 }
-*/
 
-
-class OrderList extends React.Component {
-    render() {
-        const orders = this.props.orders.sort((a, b) => a.price < b.price).map(
-            (order) => 
-                <tr key={order.order_id}>
-                  <td>{order.side}</td><td>{order.price}</td><td>{order.volume}</td>
-                  <td><button className="cancelButton" onClick={() => this.props.cancel(order.order_id)}>X</button></td>
-                </tr>
-            )
-
-        return (
-            <div className="orderList">
-                <Segment>
-                    <Header as='h3'>Active Orders</Header>
-                  <Table bordered striped hover >
-                    <thead>
-                      <tr><td><b>Side</b></td><td><b>Price</b></td><td><b>Volume</b></td><td></td></tr>
-                    </thead>
-                    <tbody>
-                      {orders}
-                    </tbody>
-                  </Table>
-              </Segment>
-            </div>
-        )
-    }
-}
 
 class TradeList extends React.Component {
+    constructor(props){
+        super(props)
+        this.state = {
+            show_all: false
+        }
+    }
+
+    toggle(){
+        this.setState({show_all: !this.state.show_all})
+    }
+
     render() {
-        /*
-        const trades= this.props.trades.map(
-            (trade) =>
-                <tr key={trade.trade_id + trade.side}>
-                  <td>{trade.side}</td><td>{trade.price}</td><td>{trade.volume}</td>
-                </tr>
-            )
-        */
+        let trades = this.props.trades
+        let button = <div><Icon name="minus"/></div>
+        if (!this.state.show_all){
+            trades = trades.slice(0, 10)
+            button = <div><Icon name="plus"/></div>
+        }
+
         return (
             <div className="tradeList">
               <Segment>
-                    <Header as='h3'>Trades</Header>
-                    <BootstrapTable 
-                      data={this.props.trades}
-                      trClassName={(row, rowIndex) => row.side == "BUY" ? "tableRowBuy" : "table-row-sell"}
-                      exportCSV={true}
-                      height="400">
-                      <TableHeaderColumn isKey hidden dataField='trade_id'>trade_id</TableHeaderColumn>
-                      <TableHeaderColumn width="6em" dataField='side'>Side</TableHeaderColumn>
-                      <TableHeaderColumn width="6em" dataField='price' dataFormat={(x) => "$" + x}>Price</TableHeaderColumn>
-                      <TableHeaderColumn width="6em" dataField='volume'>Volume</TableHeaderColumn>
-                      <TableHeaderColumn dataField='counterpart_id'>With</TableHeaderColumn>
-                    </BootstrapTable>
+                <Header as='h3'>Trades</Header>
+                <Button onClick={() => this.toggle()}>{button}</Button>
+                <BootstrapTable 
+                  data={trades}
+                  trClassName={(row, rowIndex) => row.side === "BUY" ? "tableRowBuy" : "table-row-sell"}
+                  exportCSV={true}
+                  height="400">
+                  <TableHeaderColumn isKey hidden dataField='trade_id'>trade_id</TableHeaderColumn>
+                  <TableHeaderColumn width="6em" dataField='side'>Side</TableHeaderColumn>
+                  <TableHeaderColumn width="6em" dataField='price' dataFormat={(x) => "$" + x}>Price</TableHeaderColumn>
+                  <TableHeaderColumn width="6em" dataField='volume'>Volume</TableHeaderColumn>
+                  <TableHeaderColumn dataField='counterpart_id'>With</TableHeaderColumn>
+                </BootstrapTable>
               </Segment>
             </div>
            )
     }
 }
 
+
+class VolumeLevel extends React.Component {
+    render() {
+        return <AnimateOnChange
+            baseClassName="volume"
+            animationClassName="volume-flash"
+            animate={this.props.diff !== 0}>
+            {this.props.volume}</AnimateOnChange>
+    }
+}
+
+class OrderbookLevel extends React.Component {
+    shouldComponentUpdate(nextProps){
+        const curr_level = this.props.orderbook[this.props.side][this.props.level]
+        const next_level = nextProps.orderbook[nextProps.side][nextProps.level]
+        if (curr_level && next_level)
+            return (curr_level.volume !== next_level.volume)
+
+        return true
+    }
+
+    render() {
+        const level = this.props.orderbook[this.props.side][this.props.level]
+        if (!level) return null
+
+        return <VolumeLevel volume={level.volume}/>
+    }
+}
+
+class AskLevel extends React.Component {
+    render() {
+        const side = 'ask'
+        const level = this.props.orderbook[side][this.props.level]
+        if (!level) return null
+
+        return <tr>
+              <td>
+              {this.props.tradable ? 
+			    <button className="hitButton buyButton" onClick={() => this.props.hit("BUY", level.price)}>{this.props.hit_limit}</button>
+                      : <div></div>}
+              </td>
+              <td className="bold">${level.price}</td>
+              <td><OrderbookLevel orderbook={this.props.orderbook} side={side} level={this.props.level}/></td>
+            </tr>
+    }
+}
+
+class BidLevel extends React.Component {
+    render() {
+        const side = 'bid'
+        const level = this.props.orderbook[side][this.props.level]
+        if (!level) return null
+
+        return <tr>
+              <td><OrderbookLevel orderbook={this.props.orderbook} side={side} level={this.props.level}/></td>
+              <td className="bold">${level.price}</td>
+              <td>
+              {this.props.tradable ? 
+			    <button className="hitButton sellButton" onClick={() => this.props.hit("SELL", level.price)}>{this.props.hit_limit}</button>
+                      : <div></div>}
+              </td>
+            </tr>
+    }
+}
+
 class Orderbook extends React.Component {
     render() {
-        let ask_levels = null
-        let bid_levels = null
-
-        if (this.props.orderbook.ask == null){
-        } else {
-            ask_levels = this.props.orderbook.ask.map(
-                (level) => 
-                    <tr key={level.price}>
-                      <td>
-				  	    {this.props.tradable ? 
-				  	      <button className="hitButton buyButton" onClick={() => this.props.hit_trade("BUY", level.price)}>{this.props.hit_limit}</button>
-						  : <div></div>}
-					  </td>
-                      <td className="bold">${level.price}</td><td>{level.volume}</td>
-                    </tr>
-            )
-        }
-
-        if (this.props.orderbook.bid == null){
-        } else {
-            bid_levels = this.props.orderbook.bid.map(
-                (level) => 
-                    <tr key={level.price}>
-                      <td>{level.volume}</td><td className="bold">${level.price}</td>
-                      <td>
-					    {this.props.tradable ?
-					      <button className="hitButton sellButton" onClick={() => this.props.hit_trade("SELL", level.price)}>{this.props.hit_limit}</button>
-						  : <div></div>}
-				      </td>
-                    </tr>
-                )
-        }
-
         return (
-            <div>
+            <div className="orderbook">
               <table className="orderbookTable">
                 <thead>
                   <tr>
@@ -243,14 +296,24 @@ class Orderbook extends React.Component {
                   </tr>
                 </thead>
                 <tbody>
-                  {ask_levels}
-                  {bid_levels}
+                  <AskLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={0}/>
+                  <AskLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={1}/>
+                  <AskLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={2}/>
+                  <AskLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={3}/>
+                  <AskLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={4}/>
+                  <BidLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={0}/>
+                  <BidLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={1}/>
+                  <BidLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={2}/>
+                  <BidLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={3}/>
+                  <BidLevel hit={this.props.hit_trade} tradable={this.props.tradable} hit_limit={this.props.hit_limit} orderbook={this.props.orderbook} level={4}/>
+
                 </tbody>
               </table>
             </div>
         )
     }
 }
+
 
 class HintInput extends React.Component {
     render(){
@@ -268,10 +331,9 @@ class HintInput extends React.Component {
                   size="lg" 
                   variant="primary" 
                   onClick={() => {
-                      if (this.hint.value){
+                      if (this.hint.value)
                           this.props.send_hint(this.hint.value)
-                      }
-                      this.hint.value=null
+                      this.hint.value = null
                   }}>
                   Send Hint
                 </Button>
@@ -291,15 +353,13 @@ class HintsDisplay extends React.Component {
 
     render() {
         let header = <b>No hints</b>
-        if (this.props.hints.length > 0){
+        if (this.props.hints.length > 0)
             header = this.props.hints[0]
-        }
         
         let content = null
 
-        if (this.props.hints.length > 1){
+        if (this.props.hints.length > 1)
             content = this.props.hints.slice(1).map((hint) => <div key={hint}>{hint}</div>)
-        }
 
         return (
             <Segment>
@@ -334,7 +394,7 @@ class RangeOrderbookGraph extends React.Component {
             start: 0,
             min: 0, 
             max: this.props.data.length,
-            step: 5,
+            step: 1,
             onChange: (v) => this.setState({value: v})
         }
         return <div>
@@ -357,74 +417,125 @@ class TraderInterface extends React.Component {
     }
 
     render() {
+        let pnl = {}
+        pnl[this.props.trader_id] = this.props.pnls[this.props.trader_id]
+        let trades = this.props.trades[this.props.trader_id]
+
         return (
-            <Container style={{'max-width':'3440px'}}>
+            <Container style={{'maxWidth':'3440px'}}>
               <Row>
                 <Col>
                   <HintsDisplay hints={this.props.hints}/>
                   <Segment>
-                  <RangeOrderbookGraph 
-			        data={this.props.orderbook_updates}
-                    trade={[]}
-                  />
-                </Segment>
+                    <RangeOrderbookGraph 
+			          data={this.props.orderbook_updates}
+                      trade={[]}
+                    />
+                  </Segment>
                 </Col>
               </Row>
               <Row className="smallMargins">
                 <Col md="auto">
-                    <Segment>
-                      <Row>
-                        <TradeInput 
-                            place_quote={this.props.trade}
-                            hit_limit_change={(hit_limit) => this.setState({hit_limit: hit_limit})}
-                            hit_limit={this.state.hit_limit}
-                        />
-                      </Row>
-                      <hr />
-                      <Row style={{justifyContent: 'center'}}>
-                        <Orderbook 
-                          orderbook={this.props.orderbook}
+                  <Segment>
+                    <Row>
+                      <TradeInput 
+                          place_quote={this.props.trade}
+                          hit_limit_change={(hit_limit) => this.setState({hit_limit: hit_limit})}
                           hit_limit={this.state.hit_limit}
-			              tradable={true}
-                          hit_trade={(side, price) => this.props.trade(side, price, this.state.hit_limit)}
-                        />
-                      </Row>
+                      />
+                    </Row>
+                    <hr />
+                    <Row style={{justifyContent: 'center'}}>
+                      <Orderbook 
+                        orderbook={this.props.orderbook}
+                        hit_limit={this.state.hit_limit}
+			            tradable={true}
+                        hit_trade={(side, price) => this.props.trade(side, price, this.state.hit_limit)}
+                      />
+                    </Row>
                   </Segment>
                 </Col>
-                <Col xs="4" className="smallMargins" ><OrderList orders={this.props.orders} cancel={this.props.cancel}/></Col>
-                <Col xs="6" className="smallMargins"><TradeList trades={this.props.trades} /></Col>
+                <Col><Segment><PnlDisplay pnls={pnl}/><OrderList orders={this.props.orders} cancel={this.props.cancel}/></Segment></Col>
+                <Col><TradeList trades={trades} /></Col>
               </Row>
             </Container>
         )
     }
 }
 
+
 class MonitorInterface extends React.Component {
     render() {
-        console.log(this.props)
         return (
-            <div className="traderInterface">
-              <RangeOrderbookGraph 
-			    data={this.props.orderbook_updates}
-				trade={[]}
-              />
-              <HintsDisplay hints={this.props.hints}/> 
-              <HintInput 
-                  send_hint={(hint) => this.props.hint(hint)}/>
-              <div className="traderInputs">
-                <div className="tradeInputAndOrderbook">
-                  <Orderbook 
-                    orderbook={this.props.orderbook}
-					tradable={false}
-                  />
-                </div>
-                <div className="tradeListAndPnL">
+            <Container style={{'maxWidth':'3440px'}}>
+              <Row>
+                <Col>
+                  <Segment>
+                    <HintsDisplay hints={this.props.hints}/> 
+                    <RangeOrderbookGraph 
+			          data={this.props.orderbook_updates}
+			          trade={[]}
+                    />
+                  </Segment>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <Segment>
+                    <Row style={{justifyContent: 'center'}}>
+                      <Orderbook 
+                        orderbook={this.props.orderbook}
+				        tradable={false}
+                      />
+                    </Row>
+                  </Segment>
+                </Col>
+                <Col><Segment><PnlDisplay pnls={this.props.pnls}/></Segment></Col>
+                <Col>
                   <TradeList trades={this.props.trades} />
-                </div>
-              </div>
-            </div>
+                </Col>
+              </Row>
+            </Container>
         )
     }
 }
 
-export {TraderInterface, MonitorInterface}
+
+class AdminInterface extends React.Component {
+    render() {
+        return (
+            <Container style={{'maxWidth':'3440px'}}>
+              <Row>
+                <Col>
+                  <Segment>
+                    <HintsDisplay hints={this.props.hints}/> 
+                    <RangeOrderbookGraph 
+			          data={this.props.orderbook_updates}
+			          trade={[]}
+                    />
+                  </Segment>
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <HintInput 
+                    send_hint={(hint) => this.props.hint(hint)}/>
+                    <Segment>
+                      <Row style={{justifyContent: 'center'}}>
+                        <Orderbook 
+                          orderbook={this.props.orderbook}
+				          tradable={false}
+                        />
+                      </Row>
+                    </Segment>
+                  </Col>
+                <Col>
+                  <TradeList trades={this.props.trades} />
+                </Col>
+              </Row>
+            </Container>
+        )
+    }
+}
+
+export {TraderInterface, MonitorInterface, AdminInterface}

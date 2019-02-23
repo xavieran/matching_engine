@@ -1,6 +1,6 @@
 import './login_page.css';
 
-import {Button, Form, Grid, Header, Image, Segment } from 'semantic-ui-react'
+import {Button, Form, Grid, Header, Segment } from 'semantic-ui-react'
 
 import { Redirect } from 'react-router';
 
@@ -17,10 +17,10 @@ class Login extends React.Component {
     }
 
     render() {
-        console.log("id", this.props.trader_id)
+        //console.log("id", this.props.trader_id)
         if (this.props.trader_id == null) {
             return (
-                <Grid textAlign='center' style={{height: '100$'}} verticalAlign='middle'>
+                <Grid textAlign='center' style={{height: '100%'}} verticalAlign='middle'>
                   <Grid.Column style={{maxWidth: 450}}>
                     <Header as='h2' color='blue' textAlign='center'>Login to exchange</Header>
                     <Form size='large'>
@@ -29,7 +29,7 @@ class Login extends React.Component {
                           fluid 
                           icon='user'
                           iconPosition='left' 
-                          placeholder='Enter Trader ID' 
+                          placeholder='Enter login' 
                           onChange={(e) => this.setState({trader_id: e.target.value})}/>
                         <Button 
                             color='blue' 

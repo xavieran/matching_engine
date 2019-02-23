@@ -1,11 +1,10 @@
 import ExchangeInterface from './exchange_interface.js';
-import {TraderInterface, MonitorInterface} from './trader_interface.jsx';
+import {TraderInterface, MonitorInterface, AdminInterface} from './trader_interface.jsx';
 import Login from './login_page.js';
 import './index.css';
 
 import {Menu, Icon} from 'semantic-ui-react'
 import {Popup} from 'semantic-ui-react'
-import {Divider} from 'semantic-ui-react'
 
 import { Redirect } from 'react-router';
 import { Link, Route, BrowserRouter as Router } from 'react-router-dom'
@@ -19,6 +18,7 @@ class Root extends React.Component {
         super(props)
         this.state = {
             exchange_host: "ws://le-chateaud:6789/",
+            status: 'closed',
             trader_id: null,
             connected: null, 
             orderbook: {
@@ -27,8 +27,9 @@ class Root extends React.Component {
             },
             orderbook_updates: [],
             orders: [],
-            trades: [],
-            pnl: {},
+            trades: {},
+            all_trades: [],
+            pnls: {},
             hints: [
                 "Depth of all the world's oceans in meters",
                 "There are 7 oceans"]
@@ -53,12 +54,14 @@ class Root extends React.Component {
         console.log("Updating state", this.exchange_interface)
         this.setState({
             exchange_host: this.exchange_host,
+            status: this.exchange_interface.status,
             orderbook: this.exchange_interface.orderbook,
             trades: this.exchange_interface.trades,
+            all_trades: this.exchange_interface.all_trades,
             orders: this.exchange_interface.orders,
             hints: this.exchange_interface.hints,
             orderbook_updates: this.exchange_interface.orderbook_updates,
-            pnl: this.exchange_interface.pnl
+            pnls: this.exchange_interface.pnls
         })
     }
 
@@ -98,16 +101,24 @@ class Root extends React.Component {
     }
 
     render(){
+        //<Menu.Item name="Admin" as={Link} to="/admin"><Icon name="spy" color="black" size="large"/></Menu.Item>
         return (
             <Router>
               <div>
                 <Menu stackable>
                   <Menu.Item name={this.state.trader_id ? "Logout" : "Login"} href="/login"><Icon name="user" color="blue" size="large"/></Menu.Item>
                   <Menu.Item name="Monitor" as={Link} to="/monitor"><Icon name="chart line" color="blue" size="large"/></Menu.Item>
-                  <Menu.Item name="Admin" as={Link} to="/admin"><Icon name="spy" color="black" size="large"/></Menu.Item>
+                  <Menu.Item name="Status" position="right" size="large">
+                    {this.state.status}
+                  </Menu.Item>
                   <Menu.Item name="Connected" position="right">
                     {this.state.trader_id ? <b>{"Trader:" + this.state.trader_id + " "}</b> : null}
-                    <Popup trigger={<Icon name="exchange" color={this.state.connected ? "green" : "red"} size="large"/>} content={this.state.connected ? "Connected to exchange" : "Not connected!"}/>
+                    <Popup 
+                      trigger={<Icon
+                        name="exchange" 
+                        color={this.state.connected ? "green" : "red"}
+                        size="large"/>} 
+                      content={this.state.connected ? "Connected to exchange" : "Not connected!"}/>
                   </Menu.Item>
                 </Menu>
                 <Route exact path="/" render={props => <Redirect push to="/login"/>}/>
@@ -129,6 +140,7 @@ class Root extends React.Component {
 						orderbook_updates={this.state.orderbook_updates}
                         orders={this.state.orders}
                         trades={this.state.trades}
+                        pnls={this.state.pnls}
                         hints={this.state.hints}/>
                   }}}
                 />
@@ -137,18 +149,18 @@ class Root extends React.Component {
                     orderbook={this.state.orderbook}
                     orderbook_updates={this.state.orderbook_updates}
                     hints={this.state.hints}
-                    trades={this.state.trades}/>}}
+                    pnls={this.state.pnls}
+                    trades={this.state.all_trades}/>}}
                 />
                 <Route exact path="/admin" render={props => {
-                    return <MonitorInterface
+                    return <AdminInterface
                       hint={this.send_hint.bind(this)}
                       orderbook={this.state.orderbook}
                       orderbook_updates={this.state.orderbook_updates}
                       hints={this.state.hints}
-                      trades={this.state.trades}/>
+                      trades={this.state.all_trades}/>
                 }}
                 />
-
               </div>
             </Router>
         )
