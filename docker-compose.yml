@@ -19,6 +19,6 @@ services:
             - "3000:3000"
         environment:
             # debug or prod
-            - MODE=debug
+            - MODE=prod
         volumes:
             - ./react:/html
