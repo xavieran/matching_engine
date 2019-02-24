@@ -26,7 +26,7 @@ class ExchangeInterface {
         this.orders = []
         this.hints = []
         this.midprice = 0
-        this.status = 'closed'
+        this.state = 'closed'
 
         this.websocket = null
     }
@@ -78,9 +78,9 @@ class ExchangeInterface {
                     //console.log("Got sync_state", data)
                     this.handle_sync_state(data)
                     break
-                case 'status':
-                    //console.log("Got exchange status", data)
-                    this.handle_status(data)
+                case 'matching_state':
+                    //console.log("Got matching_state", data)
+                    this.handle_matching_state(data)
                     break
 
                 default:
@@ -94,7 +94,7 @@ class ExchangeInterface {
 
     update_pnl(){
         //console.log("START UPDATE", new Date())
-        if (this.trader_id == ""){
+        if (this.trader_id === ""){
             for (const [trader_id, trades ] of Object.entries(this.trades)){
                 this.pnls[trader_id] = calculate_pnl(this.midprice, trades)
             }
@@ -104,8 +104,8 @@ class ExchangeInterface {
         //console.log("END UPDATE", new Date())
     }
 
-    handle_status(data){
-        this.status = data.status
+    handle_matching_state(data){
+        this.state = data.state
     }
 
     handle_orderbook(data){
@@ -191,6 +191,8 @@ class ExchangeInterface {
         this.handle_hints(data)
         this.trader_id = data.trader_id
 
+        this.state = data.matching_state
+
         if (!this.trades[data.trader_id] && !data.trader_id === ""){
             this.trades[data.trader_id] = []
         }
@@ -215,6 +217,17 @@ class ExchangeInterface {
 
     send(data){
         this.websocket.send(JSON.stringify(data))
+    }
+
+    send_state(state, trader_id){
+        let matching_state = {
+            type: "matching_state",
+            state: state,
+            trader_id: trader_id
+        }
+
+        //console.log("Sending state", state)
+        this.send(matching_state)
     }
 
     send_order(side, price, volume, trader_id){

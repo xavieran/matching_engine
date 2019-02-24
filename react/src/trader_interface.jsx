@@ -314,6 +314,32 @@ class Orderbook extends React.Component {
     }
 }
 
+class StateInput extends React.Component {
+    toggle_state(){
+        if (this.props.state === 'closed')
+            this.props.send_state('open')
+        else if (this.props.state === 'open')
+            this.props.send_state('closed')
+        else
+            console.warn("Exchange state bazzed")
+    }
+
+    render(){
+        return (
+            <Form>
+              <Form.Group controlId="formState">
+                <Button 
+                  size="lg" 
+                  variant={this.props.state === 'closed' ? "warning" : 'success'}
+                  onClick={this.toggle_state.bind(this)}>
+                  <Icon name={this.props.state === 'closed' ? 'play' : 'pause'} />
+                  {this.props.state}
+                </Button>
+              </Form.Group>
+            </Form>
+        )
+    }
+}
 
 class HintInput extends React.Component {
     render(){
@@ -518,8 +544,11 @@ class AdminInterface extends React.Component {
               </Row>
               <Row>
                 <Col>
+                  <StateInput 
+                    state={this.props.state} 
+                    send_state={this.props.send_state} />
                   <HintInput 
-                    send_hint={(hint) => this.props.hint(hint)}/>
+                    send_hint={this.props.send_hint}/>
                     <Segment>
                       <Row style={{justifyContent: 'center'}}>
                         <Orderbook 

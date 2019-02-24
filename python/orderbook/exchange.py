@@ -20,6 +20,7 @@ class Exchange:
         self.orderbook = orderbook.OrderBook(self.trade_handler)
         self.orderbook_updates = []
         self.hints = []
+        self.state = 'closed'
         self.trades = []
         self.traders = {}
         self.log = logging.getLogger("exchange")
@@ -59,6 +60,7 @@ class Exchange:
         {"type":"login", "trader_id":"str"}
         {"type":"sync_state", "orders":"str"} fixme
         {"type":"orderbook", "bid": [], "ask": []}
+        {"type":"matching_state", "state": "closed|open"}
         """
         self.log.info("Decoding message: {}".format(message))
 
@@ -71,13 +73,14 @@ class Exchange:
                 if not decoded["trader_id"] in self.traders:
                     self.log.warn("Trader {} has not logged in".format(decoded["trader_id"]))
                     return 
-                
-                if type == "insert":
+                if type == "hint":
+                    self.handle_hint_message(decoded)
+                elif type == "matching_state":
+                    self.handle_state_message(decoded)
+                elif type == "insert":
                     self.handle_insert_message(decoded)
                 elif type == "cancel":
                     self.handle_cancel_message(decoded)
-                elif type == "hint":
-                    self.handle_hint_message(decoded)
 
         except ValueError as e:
             self.log.warn("Failed to decode message: {}".format(e))
@@ -89,6 +92,10 @@ class Exchange:
         self.broadcast_sync_state(tid, [user])
 
     def handle_insert_message(self, msg):
+        if self.state != "open":
+            self.log.info("Got an insert while not open {}".format(str(msg)))
+            return 
+
         try:
             price = int(msg["price"])
             volume = int(msg["volume"])
@@ -117,6 +124,10 @@ class Exchange:
         self.broadcast_orderbook(ALL)
 
     def handle_cancel_message(self, msg):
+        if self.state != "open":
+            self.log.info("Got an insert while not open {}".format(str(msg)))
+            return 
+
         order_id = msg["order_id"]
         trader_id = msg["trader_id"]
 
@@ -129,6 +140,13 @@ class Exchange:
     def handle_hint_message(self, message):
         self.hints.append(message["hint"])
         self.broadcast_hints(ALL)
+
+    def handle_state_message(self, message):
+        new_state = message["state"]
+        if new_state in ["closed", "open"]:
+            self.state = new_state
+
+        self.broadcast_state(ALL)
 
     def order_to_dict(self, order):
         return {
@@ -158,6 +176,14 @@ class Exchange:
             "volume":trade.volume,
             "time":trade.time.strftime(self.time_fmt)}
 
+    def broadcast_state(self, recipients):
+        json = ujson.dumps({
+            "type": "matching_state",
+            "state": self.state
+            })
+
+        self.broadcast_queue.put((json, recipients))
+
     def broadcast_sync_state(self, tid, recipients):
         self.log.info("Syncing state for: {}".format(tid))
         
@@ -168,6 +194,7 @@ class Exchange:
             "orderbooks": self.orderbook_updates,
             "orderbook": self.orderbook_to_dict(self.orderbook), 
             "trades": [self.trade_to_dict(t) for t in self.trades],
+            "matching_state": self.state, 
             "hints": self.hints
         }
 

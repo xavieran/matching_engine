@@ -5,6 +5,7 @@ import './index.css';
 
 import {Menu, Icon} from 'semantic-ui-react'
 import {Popup} from 'semantic-ui-react'
+import {Label} from 'semantic-ui-react'
 
 import { Redirect } from 'react-router';
 import { Link, Route, BrowserRouter as Router } from 'react-router-dom'
@@ -18,7 +19,7 @@ class Root extends React.Component {
         super(props)
         this.state = {
             exchange_host: "ws://le-chateaud:6789/",
-            status: 'closed',
+            state: 'closed',
             trader_id: null,
             connected: null, 
             orderbook: {
@@ -54,7 +55,7 @@ class Root extends React.Component {
         //console.log("Updating state", this.exchange_interface)
         this.setState({
             exchange_host: this.exchange_host,
-            status: this.exchange_interface.status,
+            state: this.exchange_interface.state,
             orderbook: this.exchange_interface.orderbook,
             trades: this.exchange_interface.trades,
             all_trades: this.exchange_interface.all_trades,
@@ -93,10 +94,14 @@ class Root extends React.Component {
         this.exchange_interface.send_hint(hint, "")
     }
 
+    send_state(state){
+        this.exchange_interface.send_state(state, "")
+    }
+
     login(trader_id)
     {
-        //console.log("Logging in as: ", trader_id)
         this.exchange_interface.send_login(trader_id)
+        // Dodgy, shouldn't we wait for the exchange to get back to us?
         this.setState({trader_id: trader_id})
     }
 
@@ -108,8 +113,8 @@ class Root extends React.Component {
                 <Menu stackable>
                   <Menu.Item name={this.state.trader_id ? "Logout" : "Login"} href="/login"><Icon name="user" color="blue" size="large"/></Menu.Item>
                   <Menu.Item name="Monitor" as={Link} to="/monitor"><Icon name="chart line" color="blue" size="large"/></Menu.Item>
-                  <Menu.Item name="Status" position="right" size="large">
-                    {this.state.status}
+                  <Menu.Item name="Status" position="left">
+                      <Label size="large" color={this.state.state === 'closed' ? 'yellow' : 'green'}>Exchange is: {this.state.state}</Label>
                   </Menu.Item>
                   <Menu.Item name="Connected" position="right">
                     {this.state.trader_id ? <b>{"Trader:" + this.state.trader_id + " "}</b> : null}
@@ -154,7 +159,9 @@ class Root extends React.Component {
                 />
                 <Route exact path="/admin" render={props => {
                     return <AdminInterface
-                      hint={this.send_hint.bind(this)}
+                      send_hint={this.send_hint.bind(this)}
+                      state={this.state.state}
+                      send_state={this.send_state.bind(this)}
                       orderbook={this.state.orderbook}
                       orderbook_updates={this.state.orderbook_updates}
                       hints={this.state.hints}
